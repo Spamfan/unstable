@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Framework 3 - Logic Test 1</title>
+    <title>Framework 4 - Final Logic Test</title>
     <style>
         html, body {
             margin: 0;
@@ -47,6 +47,8 @@
         let isPlayerInGarage = false;
         let isGameBlocked = false;
         let playerStats = { kills: 0 }; // Dummy object for compatibility
+        let keys = { w: false, a: false, s: false, d: false }; // Dummy input state
+        let touchState = { moveStick: { x: 0, y: 0 }}; // Dummy input state
 
         // --- STATIC GAME STATE (FOR DRAWING ONLY) ---
         const world = { width: 4000, height: 4000, gridSize: 40 };
@@ -130,6 +132,51 @@
         };
         
         // Copied Logic Functions from main game
+        const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+        function isCollidingWithObject(x, y, width, height) { for (const obj of worldState.worldObjects) { if (x < obj.x + (obj.width || obj.size) && x + width > obj.x && y < obj.y + (obj.height || obj.size) && y + height > obj.y) return true; } return false; }
+        function checkCollision(x, y, width = player.width, height = player.height) { return isCollidingWithObject(x, y, width, height); }
+
+        function updatePlayer(deltaTime) {
+            if (player.isDead || isGameBlocked) return;
+            let dx = 0, dy = 0, targetSpeed = 0;
+            const isTryingToMove = (touchState.moveStick.x !== 0 || touchState.moveStick.y !== 0) || keys.w || keys.a || keys.s || keys.d;
+            if (isTryingToMove) {
+                if (keys.w) dy -= 1;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0) { dx /= dist; dy /= dist; }
+                player.bodyAngle = Math.atan2(dy, dx);
+                targetSpeed = player.speed || 1.94;
+            }
+            player.currentSpeed += ((targetSpeed) - player.currentSpeed) * (player.acceleration || 0.025);
+            const finalSpeed = player.currentSpeed;
+            if (Math.abs(finalSpeed) > 0.01) {
+                const nextX = player.x + Math.cos(player.bodyAngle) * finalSpeed;
+                const nextY = player.y + Math.sin(player.bodyAngle) * finalSpeed;
+                if (!checkCollision(nextX, player.y)) player.x = nextX;
+                if (!checkCollision(player.x, nextY)) player.y = nextY;
+            }
+        }
+
+        function updateEnemies() {
+            for (const e of worldState.enemies) {
+                const distToPlayer = Math.hypot(player.x - e.x, player.y - e.y);
+                if (!player.isDead && distToPlayer < (e.aggroRange || 300)) {
+                    e.angle = Math.atan2(player.y - e.y, player.x - e.x);
+                    const nextX = e.x + Math.cos(e.angle) * (e.speed || 1.0);
+                    const nextY = e.y + Math.sin(e.angle) * (e.speed || 1.0);
+                    if (!isCollidingWithObject(nextX, e.y, e.width, e.height)) e.x = nextX;
+                    if (!isCollidingWithObject(e.x, nextY, e.width, e.height)) e.y = nextY;
+                } else {
+                    if (!e.targetPos || Math.hypot(e.x - e.targetPos.x, e.y - e.targetPos.y) < 10) {
+                        e.targetPos = { x: e.x + (Math.random() - 0.5) * 100, y: e.y + (Math.random() - 0.5) * 100 };
+                    }
+                    e.angle = Math.atan2(e.targetPos.y - e.y, e.targetPos.x - e.x);
+                    e.x = clamp(e.x + Math.cos(e.angle) * 0.5, 0, world.width - e.width);
+                    e.y = clamp(e.y + Math.sin(e.angle) * 0.5, 0, world.height - e.height);
+                }
+            }
+        }
+        
         function updateBursts() { const now = Date.now(); for (let i = worldState.activeBursts.length - 1; i >= 0; i--) { const burst = worldState.activeBursts[i]; if (now >= burst.nextShotTime) { if ((burst.owner === 'player' && (player.isDead || isPlayerInGarage))) { worldState.activeBursts.splice(i, 1); continue; } playUrlSound("shoot", burst.owner); const spawnDist = burst.ownerWidth / 2; worldState.bullets.push({ owner: burst.owner, x: burst.x + Math.cos(burst.angle) * spawnDist, y: burst.y + Math.sin(burst.angle) * spawnDist, dx: Math.cos(burst.angle) * burst.bulletSpeed, dy: Math.sin(burst.angle) * burst.bulletSpeed, radius: burst.owner === 'player' ? 5 : 6, damage: burst.bulletDamage }); burst.shotsFired++; burst.nextShotTime = now + burst.delay; if (burst.shotsFired >= burst.totalShots) { worldState.activeBursts.splice(i, 1); } } } }
         
         function updateBullets() {
@@ -185,22 +232,17 @@
             lastTime = timestamp;
 
             // --- UPDATE LOGIC ---
-            const dtSeconds = deltaTime / 1000;
-            // Add simple movement to objects so update functions have work to do
-            player.x += 100 * dtSeconds;
-            if (player.x > 2200) player.x = 1800;
-            
-            for(const enemy of worldState.enemies) {
-                enemy.x -= 80 * dtSeconds;
-                if (enemy.x < 1800) enemy.x = 2200;
-            }
+            // Fake user input to make the player constantly move
+            keys.w = true;
 
             // Fire a bullet occasionally for testing
             if(Math.random() < 0.2) {
                 worldState.bullets.push({ owner: 'player', x: player.x, y: player.y, dx: 10, dy: Math.random() - 0.5 });
             }
 
-            // Call the functions we are testing
+            // Call all logic functions now
+            updatePlayer(deltaTime);
+            updateEnemies();
             updateBursts();
             updateBullets();
             updateParticles();
@@ -210,7 +252,6 @@
             consoleDiv.textContent = `dT: ${deltaTime.toFixed(2)}ms`;
             requestAnimationFrame(gameLoop);
         }
-
         // --- INITIALIZATION ---
         window.addEventListener('load', resizeCanvas);
         window.addEventListener('resize', resizeCanvas);
