@@ -477,7 +477,7 @@ const medBayUpgrades = [
 const GARAGE_UNLOCK_COST = 250;
 
 // --- DYNAMIC ENGINE SOUND SYSTEM ---
-let enginePlayer; let engineFadeNode;
+let enginePlayer; let engineFadeNode; let isEngineSoundReady = false;
 const engineAudioUrl = 'https://dl.dropboxusercontent.com/scl/fi/3vkvoeltskmfuhnuoly2m/engine_trimmed_loopable.mp3?rlkey=d844chyrjkriy4ph61cyitn04&st=ehu6kt81';
 const FADE_TIME = 0.4; const MASTER_VOLUME = 10.8; const PITCH_START = 0.5; const PITCH_END = 1.0;
 async function initEngineSound() {
@@ -492,6 +492,7 @@ async function initEngineSound() {
             onload: () => {
                 console.log("Engine audio file loaded, starting playback.");
                 enginePlayer.start();
+                isEngineSoundReady = true;
             },
         }).connect(engineFadeNode);
     } catch (error) {
@@ -499,7 +500,7 @@ async function initEngineSound() {
     }
 }
 function updateEngineSound(deltaTime) {
-    if (!enginePlayer || !engineFadeNode || !player) return;
+    if (!enginePlayer || !engineFadeNode || !player || !isEngineSoundReady) return;
     const isTryingToMove = (touchState.moveStick.x !== 0 || touchState.moveStick.y !== 0) || keys.w || keys.a || keys.s || keys.d;
     const targetVolume = isTryingToMove ? 1.0 : 0.0;
     const speedRatio = Math.min(1, Math.abs(player.currentSpeed) / 2.64);
