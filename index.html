@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Framework 1 - Performance Test</title>
+    <title>Framework 2 - Renderer Test</title>
     <style>
-        /* --- Base Styles --- */
         html, body {
             margin: 0;
             overflow: hidden;
             background-color: #000;
+            font-family: Arial, sans-serif;
         }
         canvas {
             display: block;
+            image-rendering: pixelated;
         }
         #on-screen-console {
             position: fixed;
@@ -40,61 +41,96 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const consoleDiv = document.getElementById('on-screen-console');
-
-        const square = {
-            x: 50,
-            y: 50,
-            size: 50,
-            speed: 200 // Speed in pixels per second
-        };
-
         let lastTime = 0;
 
-        // --- FUNCTIONS ---
+        // --- STATIC GAME STATE (FOR DRAWING ONLY) ---
+        const world = { width: 4000, height: 4000, gridSize: 40 };
+        const TILE_TYPE = { GRASS: 1, WATER: 4 };
+        let camera = { x: 1800, y: 1800, width: 0, height: 0, zoom: 1.0 };
+        let player = { x: 2000, y: 2000, width: 35, height: 35, bodyAngle: 0.5, turretAngle: -1.0, isHit: false, boost: {isBoosting: false} };
+        
+        // Dummy data for drawing functions
+        const cashBayUpgrades = [{ cost: 25, passive: 0.10, active: 0.20 }];
+        const medBayUpgrades = [{ cost: 0, heal: 0, maxHp: 0 }, { cost: 25, heal: 0.25, maxHp: 5 }];
+
+        let worldState = {
+            worldObjects: [
+                { type: 'tree', x: 2100, y: 2050, size: 40, leafyDetails: [{x:5,y:5,r:5}] },
+                { type: 'block', x: 2150, y: 1950, width: 40, height: 40, hits: 0, cracks: null, speckles: [{x:10,y:10,size:2}] }
+            ],
+            enemies: [
+                { type: 'normal', x: 1900, y: 1900, width: 35, height: 35, angle: 0, isHit: false },
+                { type: 'elite', x: 2100, y: 1900, width: 40, height: 40, angle: 0, isHit: true }
+            ],
+            pickups: [
+                { type: 'money', value: 50, x: 2050, y: 2050, radius: 10 },
+                { type: 'heart', x: 1950, y: 2050, radius: 15 }
+            ],
+            base: {
+                x: 1880, y: 1880, size: 14 * 40,
+                cashBay: { tier: 1, x: 1880 + (9 * 40), y: 1880 + (7 * 40), width: 80, height: 80 },
+                medBay: { tier: 1, x: 1880 + (3 * 40), y: 1880 + (7 * 40), width: 80, height: 80 },
+                pads: []
+            },
+            bullets: [{x: 1980, y: 1980, radius: 5, owner: 'player'}],
+            particles: [{type: 'money', x: 2000, y: 1950, life: 50, color: '#fbbf24'}],
+            decorations: [{x: 2200, y: 2200, angle: 1, length: 15, dark: false}],
+            baseDecorations: [{x: 1900, y: 1900, angle: 2, length: 10}],
+            pings: [],
+            tileMap: Array.from({ length: world.height / world.gridSize }, () => Array(world.width / world.gridSize).fill(TILE_TYPE.GRASS))
+        };
+        // Add a small patch of water for testing
+        worldState.tileMap[50][52] = TILE_TYPE.WATER;
+        worldState.tileMap[51][52] = TILE_TYPE.WATER;
+
+
+        // --- DRAWING FUNCTIONS (Copied from main game) ---
+        function formatMoney(amount) {
+            if (amount >= 1000) return (amount / 1000).toFixed(1) + 'k';
+            return amount.toFixed(2);
+        }
+
+        function drawStroked(drawFunc) { ctx.lineWidth = 3; ctx.strokeStyle = 'black'; ctx.stroke(); drawFunc(); }
+        function drawTank(x, y, width, height, bodyAngle, turretAngle, bodyColor = "#A0AEC0", turretColor = "#718096", isHit = false, isBoosting = false) { if (isHit) bodyColor = '#ef4444'; ctx.save(); ctx.translate(x + width / 2, y + height / 2); ctx.save(); ctx.rotate(bodyAngle); drawStroked(() => { ctx.fillStyle = "#4A5568"; ctx.fillRect(-width / 2, -height / 2, width, height); ctx.fillStyle = bodyColor; ctx.fillRect(-width / 2 * 0.8, -height / 2 * 0.8, width * 0.8, height * 0.8); }); ctx.restore(); ctx.rotate(turretAngle); drawStroked(() => { ctx.fillStyle = turretColor; ctx.fillRect(-width/4, -height/8, width/2, height/4); ctx.fillRect(0, -width/16, width/2, width/8); }); ctx.restore(); }
+        function drawTree(x, y, size, leafyDetails) { const trunkColor = '#6b462a', leavesColor1 = '#166534', trunkSize = size / 5; ctx.fillStyle = trunkColor; ctx.fillRect(x + size / 2 - trunkSize / 2, y + size / 2, trunkSize, size / 2); drawStroked(() => { ctx.fillStyle = leavesColor1; ctx.beginPath(); ctx.arc(x + size / 2, y + size / 3, size / 2.2, 0, Math.PI * 2); ctx.fill(); }); }
+        function drawDeadBush(x, y, size) { ctx.save(); ctx.translate(x + size / 2, y + size / 2); ctx.strokeStyle = 'black'; ctx.lineWidth = 4; ctx.lineCap = 'round'; for (let i = 0; i < 3; i++) { ctx.rotate(Math.PI / 3); ctx.beginPath(); ctx.moveTo(0, -size / 2.5); ctx.lineTo(0, size / 2.5); ctx.stroke(); } ctx.restore(); }
+        function drawCrackedBlock(x, y, width, height, color, crackCoords, speckles) { ctx.fillStyle = 'black'; ctx.fillRect(x, y, width, height); ctx.fillStyle = color; ctx.fillRect(x + 2, y + 2, width - 4, height - 4); }
+        function drawCashBay(x, y, width, height) { ctx.fillStyle = '#166534'; ctx.fillRect(x, y, width, height); ctx.fillStyle = '#22c55e'; ctx.font = 'bold 60px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('$', x + width / 2, y + height / 2); }
+        function drawCashBag(x, y, size) { ctx.fillStyle = '#166534'; ctx.beginPath(); ctx.roundRect(x, y, size, size, [8]); ctx.fill(); ctx.strokeStyle = 'black'; ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = '#fBBF24'; ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('$', x + size / 2, y + size / 2); }
+        function drawMedBayPad(x, y, width, height) { ctx.fillStyle = '#166534'; ctx.fillRect(x, y, width, height); ctx.fillStyle = '#22c55e'; ctx.font = 'bold 60px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+', x + width / 2, y + height / 2); }
+        function drawGarage(x, y, width, height) { ctx.fillStyle = '#475569'; ctx.fillRect(x, y, width, height); ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 4; ctx.strokeRect(x, y, width, height); ctx.fillStyle = '#334155'; ctx.fillRect(x + 5, y + 5, width - 10, height - 10); }
+        function drawBlueprint(x, y, size, id) { ctx.font = `${size * 0.8}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('📄', x + size/2, y + size/2); }
+        function drawBlueHeart(x, y, radius) { drawStroked(() => { ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.moveTo(x, y - radius / 2); ctx.bezierCurveTo(x, y - radius, x - radius, y - radius, x - radius, y); ctx.bezierCurveTo(x - radius, y + radius / 2, x, y + radius, x, y + radius); ctx.bezierCurveTo(x, y + radius, x + radius, y + radius / 2, x + radius, y); ctx.bezierCurveTo(x + radius, y - radius, x, y - radius, x, y - radius / 2); ctx.fill(); }); }
+        function drawPingLine(startX, startY, endX, endY, color, text) { ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(endX, endY); ctx.stroke(); }
+        function drawWorld() { const colors = { grass: '#48D43B', water: '#0000FF', block: '#E2E8F0', base: '#374151' }; const startX = Math.floor(camera.x / world.gridSize), endX = Math.ceil((camera.x + camera.width) / world.gridSize), startY = Math.floor(camera.y / world.gridSize), endY = Math.ceil((camera.y + camera.height) / world.gridSize); ctx.fillStyle = colors.grass; ctx.fillRect(camera.x, camera.y, camera.width, camera.height); for (let y = startY; y < endY; y++) { for (let x = startX; x < endX; x++) { if (worldState.tileMap[y] && worldState.tileMap[y][x] === TILE_TYPE.WATER) { ctx.fillStyle = colors.water; ctx.fillRect(x * world.gridSize, y * world.gridSize, world.gridSize + 1, world.gridSize + 1); } } } for(const d of worldState.decorations) { ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 2; ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.angle); ctx.beginPath(); ctx.moveTo(0, -d.length/2); ctx.lineTo(0, d.length/2); ctx.stroke(); ctx.restore(); } if (worldState.base.x) { ctx.fillStyle = colors.base; ctx.fillRect(worldState.base.x, worldState.base.y, worldState.base.size, worldState.base.size); for(const d of worldState.baseDecorations) { ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 2; ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.angle); ctx.beginPath(); ctx.moveTo(0, -d.length/2); ctx.lineTo(0, d.length/2); ctx.stroke(); ctx.restore(); } } for (const obj of worldState.worldObjects) { if (obj.type === 'block') { drawCrackedBlock(obj.x, obj.y, obj.width, obj.height, colors.block); } else if (obj.type === 'tree') { drawTree(obj.x, obj.y, obj.size, obj.leafyDetails); } } if(worldState.base.cashBay) { drawCashBay(worldState.base.cashBay.x, worldState.base.cashBay.y, worldState.base.cashBay.width, worldState.base.cashBay.height); } if(worldState.base.medBay) { drawMedBayPad(worldState.base.medBay.x, worldState.base.medBay.y, worldState.base.medBay.width, worldState.base.medBay.height); } }
+        function drawDynamicElements() { for (const p of worldState.pickups) { if (p.type === 'money') { ctx.fillStyle = '#22c55e'; ctx.fillRect(p.x - 12, p.y - 8, 24, 16); ctx.fillStyle='white'; ctx.font='bold 12px "Times New Roman", serif'; ctx.textAlign = 'center'; ctx.fillText(`$${p.value}`, p.x, p.y+4); } else if (p.type === 'heart') { drawStroked(() => { ctx.fillStyle = '#e11d48'; ctx.beginPath(); ctx.moveTo(p.x, p.y - p.radius / 2); ctx.bezierCurveTo(p.x, p.y - p.radius, p.x - p.radius, p.y - p.radius, p.x - p.radius, p.y); ctx.bezierCurveTo(p.x - p.radius, p.y + p.radius / 2, p.x, p.y + p.radius, p.x, p.y + p.radius); ctx.bezierCurveTo(p.x, p.y + p.radius, p.x + p.radius, p.y + p.radius / 2, p.x + p.radius, p.y); ctx.bezierCurveTo(p.x + p.radius, p.y - p.radius, p.x, p.y - p.radius, p.x, p.y - p.radius / 2); ctx.fill(); }); } } for (const p of worldState.particles) { ctx.globalAlpha = p.life / 100; if (p.type === 'money') { ctx.fillStyle = p.color; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center'; ctx.fillText('$', p.x, p.y); } ctx.globalAlpha = 1.0; } for (const b of worldState.bullets) { ctx.fillStyle='black';ctx.beginPath();ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);ctx.fill();ctx.fillStyle=b.owner==='player'?'#FBBF24':'#f472b6';ctx.beginPath();ctx.arc(b.x,b.y,b.radius-2,0,Math.PI*2);ctx.fill(); } for (const e of worldState.enemies) { drawTank(e.x, e.y, e.width, e.height, e.angle, e.angle, e.type === 'elite' ? '#991b1b' : '#7f1d1d', e.type === 'elite' ? '#facc15' : '#718096', e.isHit); } }
+        function drawOnscreenUI() { ctx.save(); ctx.textAlign = 'center'; ctx.textShadow = '1px 1px 2px black'; if (worldState.base.cashBay) { ctx.font = 'bold 16px Arial'; ctx.fillStyle = 'white'; ctx.fillText('CASH BAY', worldState.base.cashBay.x + worldState.base.cashBay.width / 2, worldState.base.cashBay.y - 25); } ctx.restore(); }
+        function drawPlayerAndPings() { if (player) { drawTank(player.x, player.y, player.width, player.height, player.bodyAngle, player.turretAngle, "#A0AEC0", "#718096", player.isHit, false); } }
+        function draw() { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.save(); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y); drawWorld(); drawDynamicElements(); drawOnscreenUI(); drawPlayerAndPings(); ctx.restore(); }
+
+        // --- CORE LOOP ---
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            camera.width = canvas.width / camera.zoom;
+            camera.height = canvas.height / camera.zoom;
         }
 
         function gameLoop(timestamp) {
-            // Handle the first frame
-            if (!lastTime) {
-                lastTime = timestamp;
-            }
-
-            // Calculate deltaTime in seconds
-            const deltaTime = (timestamp - lastTime) / 1000;
+            if (!lastTime) { lastTime = timestamp; }
+            const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
 
-            // --- UPDATE LOGIC (Frame-Rate Independent) ---
-            square.x += square.speed * deltaTime;
+            // No update logic, just draw
+            draw();
 
-            // Wrap the square when it goes off-screen
-            if (square.x > canvas.width) {
-                square.x = -square.size;
-            }
-
-            // --- DRAWING LOGIC ---
-            // Clear the canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw the square
-            ctx.fillStyle = 'white';
-            ctx.fillRect(square.x, square.y, square.size, square.size);
-
-            // --- CONSOLE OUTPUT ---
-            // Convert deltaTime back to milliseconds for display
-            consoleDiv.textContent = `dT: ${(deltaTime * 1000).toFixed(2)}ms`;
-
-            // Request the next frame
+            consoleDiv.textContent = `dT: ${deltaTime.toFixed(2)}ms`;
             requestAnimationFrame(gameLoop);
         }
 
         // --- INITIALIZATION ---
         window.addEventListener('load', resizeCanvas);
         window.addEventListener('resize', resizeCanvas);
-        
-        // Start the game loop
         requestAnimationFrame(gameLoop);
     </script>
 </body>
