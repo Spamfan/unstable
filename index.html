@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Framework 2 - Renderer Test</title>
+    <title>Framework 3 - Logic Test 1</title>
     <style>
         html, body {
             margin: 0;
@@ -42,6 +42,11 @@
         const ctx = canvas.getContext('2d');
         const consoleDiv = document.getElementById('on-screen-console');
         let lastTime = 0;
+
+        // --- GLOBALS FOR UPDATE FUNCTIONS ---
+        let isPlayerInGarage = false;
+        let isGameBlocked = false;
+        let playerStats = { kills: 0 }; // Dummy object for compatibility
 
         // --- STATIC GAME STATE (FOR DRAWING ONLY) ---
         const world = { width: 4000, height: 4000, gridSize: 40 };
@@ -108,6 +113,63 @@
         function drawPlayerAndPings() { if (player) { drawTank(player.x, player.y, player.width, player.height, player.bodyAngle, player.turretAngle, "#A0AEC0", "#718096", player.isHit, false); } }
         function draw() { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.save(); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y); drawWorld(); drawDynamicElements(); drawOnscreenUI(); drawPlayerAndPings(); ctx.restore(); }
 
+
+        // --- LOGIC FUNCTIONS & STUBS ---
+
+        // Dummy/Stub functions to prevent crashes during test
+        function playUrlSound(soundName) {}
+        function playSound(soundName, ...args) {}
+        function handlePlayerDeath() {}
+        function dropLoot(x, y, type) {}
+        function unlockAchievement(id) {}
+
+        // Dummy spatial grid that returns all objects (worst-case performance test)
+        const spatialGrid = {
+            getNearby: (x, y) => [...worldState.worldObjects, ...worldState.enemies, player]
+        };
+        
+        // Copied Logic Functions from main game
+        function updateBursts() { const now = Date.now(); for (let i = worldState.activeBursts.length - 1; i >= 0; i--) { const burst = worldState.activeBursts[i]; if (now >= burst.nextShotTime) { if ((burst.owner === 'player' && (player.isDead || isPlayerInGarage))) { worldState.activeBursts.splice(i, 1); continue; } playUrlSound("shoot", burst.owner); const spawnDist = burst.ownerWidth / 2; worldState.bullets.push({ owner: burst.owner, x: burst.x + Math.cos(burst.angle) * spawnDist, y: burst.y + Math.sin(burst.angle) * spawnDist, dx: Math.cos(burst.angle) * burst.bulletSpeed, dy: Math.sin(burst.angle) * burst.bulletSpeed, radius: burst.owner === 'player' ? 5 : 6, damage: burst.bulletDamage }); burst.shotsFired++; burst.nextShotTime = now + burst.delay; if (burst.shotsFired >= burst.totalShots) { worldState.activeBursts.splice(i, 1); } } } }
+        
+        function updateBullets() {
+            for (let i = worldState.bullets.length - 1; i >= 0; i--) {
+                const b = worldState.bullets[i];
+                if (!b) continue;
+                b.x += b.dx;
+                b.y += b.dy;
+                if (b.x < camera.x - 100 || b.x > camera.x + camera.width + 100 || b.y < camera.y - 100 || b.y > camera.y + camera.height + 100) {
+                    worldState.bullets.splice(i, 1);
+                    continue;
+                }
+                let bulletDestroyed = false;
+                const nearbyObjects = spatialGrid.getNearby(b.x, b.y);
+                if (b.owner === 'player') {
+                    const nearbyEnemies = nearbyObjects.filter(o => o.type !== undefined && o !== player);
+                    for (const e of nearbyEnemies) {
+                        if (Math.hypot(b.x - (e.x + e.width / 2), b.y - (e.y + e.height / 2)) < (e.width / 2)) {
+                            worldState.bullets.splice(i, 1);
+                            bulletDestroyed = true;
+                            break;
+                        }
+                    }
+                }
+                if (bulletDestroyed) continue;
+                const nearbyWorldObjects = nearbyObjects.filter(o => o.type !== undefined && o !== player);
+                for (const obj of nearbyWorldObjects) {
+                    const objWidth = obj.size || obj.width;
+                    const objHeight = obj.size || obj.height;
+                    if (b.x > obj.x && b.x < obj.x + objWidth && b.y > obj.y && b.y < obj.y + objHeight) {
+                        worldState.bullets.splice(i, 1);
+                        bulletDestroyed = true;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        function updateParticles() { for (let i = worldState.particles.length - 1; i >= 0; i--) { const p = worldState.particles[i]; p.x += p.dx; p.y += p.dy; p.life--; if (p.life <= 0) { worldState.particles.splice(i, 1); } } }
+
+
         // --- CORE LOOP ---
         function resizeCanvas() {
             canvas.width = window.innerWidth;
@@ -121,9 +183,29 @@
             const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
 
-            // No update logic, just draw
-            draw();
+            // --- UPDATE LOGIC ---
+            const dtSeconds = deltaTime / 1000;
+            // Add simple movement to objects so update functions have work to do
+            player.x += 100 * dtSeconds;
+            if (player.x > 2200) player.x = 1800;
+            
+            for(const enemy of worldState.enemies) {
+                enemy.x -= 80 * dtSeconds;
+                if (enemy.x < 1800) enemy.x = 2200;
+            }
 
+            // Fire a bullet occasionally for testing
+            if(Math.random() < 0.2) {
+                worldState.bullets.push({ owner: 'player', x: player.x, y: player.y, dx: 10, dy: Math.random() - 0.5 });
+            }
+
+            // Call the functions we are testing
+            updateBursts();
+            updateBullets();
+            updateParticles();
+
+            // --- DRAWING & CONSOLE ---
+            draw();
             consoleDiv.textContent = `dT: ${deltaTime.toFixed(2)}ms`;
             requestAnimationFrame(gameLoop);
         }
