@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tank Tycoon (Pre-Alpha 5.5)</title>
+    <title>Tank Tycoon (Pre-Alpha 5.6)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
@@ -381,7 +381,7 @@
 
 <script>
 // --- SETUP & STATE ---
-const GAME_VERSION = "Pre-Alpha 5.5";
+const GAME_VERSION = "Pre-Alpha 5.6";
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 const gameContainer = document.getElementById('game-container');
 const TARGET_DT = 1000 / 60; // The ideal time for one frame at 60fps
@@ -1358,7 +1358,7 @@ function updatePlayer(deltaTime, timeScale) {
 
     let speedModifier = 1.0;
     if (player.boost.isBoosting) speedModifier *= 3;
-    player.currentSpeed += (targetSpeed - player.currentSpeed) * player.acceleration * timeScale; 
+    player.currentSpeed += (targetSpeed - player.currentSpeed) * player.acceleration; 
     
     const pCenterX = player.x + player.width/2, pCenterY = player.y + player.height/2;
     const tileX = Math.floor(pCenterX / world.gridSize);
