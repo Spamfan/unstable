@@ -509,7 +509,7 @@ function updateEngineSound(deltaTime) {
     targetPitch *= player.pitchPenalty;
 
     engineFadeNode.gain.rampTo(targetVolume, FADE_TIME);
-    enginePlayer.playbackRate = targetPitch;
+    enginePlayer.playbackRate.value = targetPitch;
 
     if (player.pitchPenalty < 1) {
         player.pitchPenalty = Math.min(1, player.pitchPenalty + (deltaTime / 300));
