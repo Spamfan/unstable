@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tank Tycoon (Pre-Alpha 5.3)</title>
+    <title>Tank Tycoon (Pre-Alpha 5.4)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
@@ -381,7 +381,7 @@
 
 <script>
 // --- SETUP & STATE ---
-const GAME_VERSION = "Pre-Alpha 5.3";
+const GAME_VERSION = "Pre-Alpha 5.4";
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 const gameContainer = document.getElementById('game-container');
 const world = { width: 4000, height: 4000, gridSize: 40, chunkSize: 16 * 40 };
@@ -2831,40 +2831,44 @@ function setupInputs(isMobile) {
         canvas.addEventListener('contextmenu', e => e.preventDefault());
     }
 }
-async function startGame(isContinuing) { 
+async function startGame(isContinuing) {
     document.getElementById('start-button-container').style.display = 'none';
     document.querySelector('#start-screen .loader').style.display = 'block';
     document.getElementById('loading-text').style.display = 'block';
 
-    setTimeout(async () => {
-        let success = true;
-        if (isContinuing) {
-            success = loadGame();
-        } else {
-            startNewGame();
-        }
-        
-        if (!success) { 
-            window.location.reload(); 
-            return;
-        }
+    // A tiny delay to allow the "Loading..." text to render before the main thread gets busy.
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-        await initAudio();
-        document.body.classList.add(deviceMode + '-view');
-        document.body.classList.remove(deviceMode === 'mobile' ? 'desktop-view' : 'mobile-view');
-        setupInputs(deviceMode === 'mobile'); 
-        
-        const startScreen = document.getElementById('start-screen');
-        startScreen.style.opacity = '0'; 
-        setTimeout(() => { 
-            startScreen.style.display = 'none'; 
-            document.getElementById('pause-btn').style.display = 'block';
-            document.getElementById('game-version-display').style.display = isVersionVisible ? 'block' : 'none';
-            resizeCanvas();
-            gameLoop(); 
-            manageAmbience();
-        }, 250);
-    }, 100); 
+    let success = true;
+    if (isContinuing) {
+        success = loadGame();
+    } else {
+        startNewGame();
+    }
+
+    if (!success) {
+        window.location.reload();
+        return;
+    }
+
+    await initAudio();
+    document.body.classList.add(deviceMode + '-view');
+    document.body.classList.remove(deviceMode === 'mobile' ? 'desktop-view' : 'mobile-view');
+    setupInputs(deviceMode === 'mobile');
+
+    // Start the game loop immediately and synchronously.
+    resizeCanvas();
+    gameLoop();
+    manageAmbience();
+
+    // Handle the UI fade-out separately from the game loop initialization.
+    const startScreen = document.getElementById('start-screen');
+    startScreen.style.opacity = '0';
+    setTimeout(() => {
+        startScreen.style.display = 'none';
+        document.getElementById('pause-btn').style.display = 'block';
+        document.getElementById('game-version-display').style.display = isVersionVisible ? 'block' : 'none';
+    }, 500); // Match the 0.5s CSS transition time.
 }
 
 function showStartScreen() {
