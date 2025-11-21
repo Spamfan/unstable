@@ -3,18 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tank Tycoon (Pre-Alpha 5.15)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Tank Tycoon (Alpha 5)</title>
+    <!-- Tailwind Removed for Performance -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
-        /* --- Base Styles --- */
+        /* --- Base Styles & Baked Utilities --- */
         html, body { height: 100%; width: 100%; overflow: hidden; margin: 0; padding: 0; background-color: #2D3748; }
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #1a202c;
-            color: #F7FAFC;
-            touch-action: none;
+        body { font-family: Arial, sans-serif; background-color: #1a202c; color: #F7FAFC; touch-action: none; }
+        
+        /* Utility Replacements (Baked) */
+        .text-3xl { font-size: 1.5rem; line-height: 1.75rem; }
+        .text-2xl { font-size: 1.25rem; line-height: 1.5rem; }
+        .text-lg { font-size: 1rem; line-height: 1.5rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .font-bold { font-weight: 700; }
+        .font-black { font-weight: 900; }
+        .tracking-wider { letter-spacing: 0.05em; }
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .text-gray-400 { color: #9ca3af; }
+        .text-gray-500 { color: #6b7280; }
+        .text-white { color: #fff; }
+        .text-yellow-300 { color: #fde047; }
+        
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .flex-row { flex-direction: row; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .flex-grow { flex-grow: 1; }
+        .flex-grow-0 { flex-grow: 0; }
+        .flex-shrink-0 { flex-shrink: 0; }
+        .flex-1 { flex: 1 1 0%; }
+        
+        .gap-4 { gap: 0.75rem; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-8 { gap: 2rem; }
+        .gap-12 { gap: 3rem; }
+        .space-y-2 > * + * { margin-top: 0.5rem; }
+        .space-y-3 > * + * { margin-top: 0.75rem; }
+        
+        .p-4 { padding: 0.75rem; }
+        .p-6 { padding: 1rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-auto { margin-top: auto; }
+        
+        .bg-gray-800 { background-color: #1f2937; }
+        .bg-gray-900\/50 { background-color: rgba(17, 24, 39, 0.5); }
+        .bg-gray-700 { background-color: #374151; }
+        .bg-gray-700\/50 { background-color: rgba(55, 65, 81, 0.5); }
+        .bg-red-600 { background-color: #dc2626; }
+        .bg-red-900\/50 { background-color: rgba(127, 29, 29, 0.5); }
+        .bg-green-600 { background-color: #16a34a; }
+        .bg-green-800 { background-color: #166534; }
+        .text-green-300 { color: #86efac; }
+        .bg-blue-600 { background-color: #2563eb; }
+        .bg-cyan-600 { background-color: #0891b2; }
+        .bg-purple-600 { background-color: #9333ea; }
+        
+        .hover\:bg-gray-600:hover { background-color: #4b5563; }
+        .hover\:bg-gray-700\/50:hover { background-color: rgba(55, 65, 81, 0.5); }
+        .hover\:bg-red-500:hover { background-color: #ef4444; }
+        .hover\:bg-green-500:hover { background-color: #22c55e; }
+        .hover\:bg-blue-500:hover { background-color: #3b82f6; }
+        .hover\:bg-cyan-500:hover { background-color: #06b6d4; }
+        .hover\:bg-purple-500:hover { background-color: #a855f7; }
+        
+        .rounded-lg { border-radius: 0.5rem; }
+        .rounded-2xl { border-radius: 1rem; }
+        .rounded-full { border-radius: 9999px; }
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+        
+        .border-2 { border-width: 2px; border-style: solid; }
+        .border-transparent { border-color: transparent; }
+        .border-gray-700 { border-color: #374151; }
+        .border-red-800 { border-color: #991b1b; }
+        .border-green-800 { border-color: #166534; }
+        .border-cyan-800 { border-color: #155e75; }
+        .border-purple-800 { border-color: #6b21a8; }
+        .hover\:border-blue-500:hover { border-color: #3b82f6; }
+        
+        .relative { position: relative; }
+        .overflow-hidden { overflow: hidden; }
+        .overflow-y-auto { overflow-y: auto; }
+        .cursor-pointer { cursor: pointer; }
+        
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        
+        /* Garage Specifics */
+        .w-11\/12 { width: 91.666667%; }
+        .max-w-4xl { max-width: 56rem; }
+        .h-5\/6 { height: 83.333333%; }
+        .max-h-\[700px\] { max-height: 700px; }
+
+        /* Responsive */
+        .hidden { display: none; }
+        @media (min-width: 768px) {
+            .md\:block { display: block; }
+            .md\:flex { display: flex; }
+            .md\:hidden { display: none; }
+            .md\:flex-row { flex-direction: row; }
+            .md\:flex-col { flex-direction: column; }
+            .md\:space-y-3 > * + * { margin-top: 0.75rem; }
+            .md\:w-full { width: 100%; }
+            .md\:w-1\/3 { width: 33.333333%; }
+            .md\:w-2\/3 { width: 66.666667%; }
+            .md\:p-6 { padding: 1.5rem; }
+            .md\:py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+            .md\:px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+            .md\:border-r-2 { border-right-width: 2px; }
+            .md\:border-b-0 { border-bottom-width: 0px; }
+            .md\:border-l-4 { border-left-width: 4px; }
+            .md\:mt-6 { margin-top: 1.5rem; }
+            .md\:pt-6 { padding-top: 1.5rem; }
+            .md\:text-left { text-align: left; }
+            .md\:text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .md\:overflow-hidden { overflow: hidden; }
         }
+
         /* --- Start/Loading Screen --- */
         #start-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2D3748; display: flex; flex-direction:column; justify-content: center; align-items: center; z-index: 200; color: white; transition: opacity 0.5s ease-out; }
         #splash-image { max-width: 67.5%; max-height: 52.5%; border-radius: 1rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
@@ -23,7 +145,7 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #version-display { position: absolute; top: 10px; left: 10px; font-size: 14px; color: rgba(255,255,255,0.7); }
         .start-button-container { display: none; margin-top: 2rem; display: flex; flex-direction: column; gap: 1rem; }
-        .start-btn { padding: 20px 40px; font-size: 24px; background: #16a34a; border: 2px solid white; border-radius: 10px; cursor: pointer; transition: background-color 0.2s; }
+        .start-btn { padding: 20px 40px; font-size: 24px; background: #16a34a; border: 2px solid white; border-radius: 10px; cursor: pointer; transition: background-color 0.2s; color: white; }
         .start-btn:hover { background: #22c55e; }
         
         /* --- Layout --- */
@@ -55,8 +177,9 @@
         #ping-spy-panel { bottom: 10px; left: 10px; font-size: 10px; }
         
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; flex-direction: column; z-index: 100; text-align: center; }
-        .modal-content { background: #4A5568; padding: 1.5rem; border-radius: 1rem; border: 2px solid #2D3748; display: flex; flex-direction: column; gap: 1rem; align-items: center; max-height: 80%; overflow-y: auto; width: 90%; max-width: 500px; }
-        .modal-button { padding: 12px 24px; font-size: 18px; background: #b91c1c; border: 2px solid white; border-radius: 10px; cursor: pointer; transition: background-color 0.2s; }
+        .modal-content { background: #4A5568; padding: 1rem; border-radius: 1rem; border: 2px solid #2D3748; display: flex; flex-direction: column; gap: 0.5rem; align-items: center; max-height: 80%; overflow-y: auto; width: 90%; max-width: 500px; }
+        .modal-content h2 { margin-top: 0; margin-bottom: 0.25rem; } /* Tighten Header */
+        .modal-button { padding: 12px 24px; font-size: 18px; background: #b91c1c; border: 2px solid white; border-radius: 10px; cursor: pointer; transition: background-color 0.2s; color: white; }
         .modal-button:hover { filter: brightness(1.1); }
         .confirm-button { background: #16a34a; }
         #resume-btn { transform: scale(1.3); } /* Y1.6 Make Resume bigger */
@@ -64,11 +187,11 @@
         .admin-button-color { background: #38bdf8; } /* Y1.6 Sky Blue */
         
         /* Y1.6 Audio Toggle Styles */
-        .audio-toggle { display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 12px 24px; font-size: 18px; border: 2px solid white; border-radius: 10px; user-select: none; gap: 0.5rem; }
+        .audio-toggle { display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 12px 24px; font-size: 18px; border: 2px solid white; border-radius: 10px; user-select: none; gap: 0.5rem; color: white; }
         .audio-toggle-label { font-weight: bold; }
         .audio-toggle-option { padding: 4px 12px; border-radius: 6px; border: 2px solid transparent; }
         .audio-toggle-option.active { background-color: #16a34a; border-color: white; }
-		#pause-btn { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; cursor: pointer; position: fixed; top: 10px; z-index: 10; }
+		#pause-btn { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; cursor: pointer; position: fixed; top: 10px; z-index: 10; color: white; }
         .mobile-view #pause-btn { left: 10px; }
         .desktop-view #pause-btn { left: 16px; } /* Aligns with desktop header padding */
         
@@ -77,7 +200,7 @@
         .desktop-view #achievement-notification { top: 10px; left: 50%; transform: translate(-50%, -120%); z-index: 101; }
         #transition-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 199; opacity: 0; pointer-events: none; transition: opacity 0.5s ease-in-out; }
 
-        .utility-btn { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; cursor: pointer; font-size: 20px; width: 44px; text-align: center; }
+        .utility-btn { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; cursor: pointer; font-size: 20px; width: 44px; text-align: center; color: white; }
         .utility-btn:hover { background: rgba(255,255,255,0.1); }
         .desktop-view #utility-buttons { position: fixed; top: 80px; right: 10px; z-index: 10; display: flex; flex-direction: column; gap: 8px; }
         .mobile-view #utility-buttons { 
@@ -163,7 +286,7 @@
         ::-webkit-scrollbar-track { background: #2d3748; }
         ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #718096; }
-        .btn { transition: all 0.2s ease-in-out; border-width: 2px; }
+        .btn { transition: all 0.2s ease-in-out; border-width: 2px; border-style: solid; color: white; cursor: pointer; }
         .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
         .btn:active:not(:disabled) { transform: translateY(0); }
         .btn:disabled { background-color: #4a5568 !important; border-color: #2d3748 !important; color: #a0aec0 !important; cursor: not-allowed !important; }
@@ -215,6 +338,7 @@
         }
 
         #saving-overlay { z-index: 101; }
+        #autosave-confirm-text { height: 1rem !important; margin: 0 !important; font-size: 0.8rem !important; }
         #autosave-notification { 
             position: fixed; 
             top: 10px; 
@@ -230,20 +354,23 @@
             pointer-events: none; 
             font-size: 12px;
         }
-        #on-screen-console {
+        #dev-tools-panel {
             position: fixed;
             bottom: 50px;
             left: 10px;
             background: rgba(0,0,0,0.8);
             color: #00FF00;
-            font-family: monospace;
-            padding: 8px;
-            border-radius: 5px;
+            padding: 10px;
+            border-radius: 8px;
             z-index: 300;
             display: none;
-            font-size: 14px;
-            min-width: 150px;
+            font-family: monospace;
+            font-size: 12px;
+            min-width: 200px;
         }
+        .dev-slider-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+        #console-output { max-height: 50px; overflow-y: auto; border-bottom: 1px solid #333; margin-bottom: 8px; padding-bottom: 4px; }
+        
         .console-toggle-container {
             display: flex;
             align-items: center;
@@ -254,6 +381,7 @@
             width: 100%;
             justify-content: center;
             cursor: pointer;
+            color: white;
         }
     </style>
 </head>
@@ -291,7 +419,15 @@
     <div id="achievement-notification"></div>
     <div id="debug-panel"></div>
     <div id="ping-spy-panel"></div>
-    <div id="on-screen-console"></div>
+    <div id="dev-tools-panel">
+        <div id="console-output">Console Ready...</div>
+        <div class="dev-slider-row"><label>Player Spd:</label><input type="range" id="dev-player-spd" min="0.1" max="5.0" step="0.1" value="1.0"><span id="val-player-spd">1.0</span></div>
+        <div class="dev-slider-row"><label>Enemy Spd:</label><input type="range" id="dev-enemy-spd" min="0.1" max="5.0" step="0.1" value="1.0"><span id="val-enemy-spd">1.0</span></div>
+        <div class="dev-slider-row"><label>Bullet Spd:</label><input type="range" id="dev-bullet-spd" min="0.1" max="5.0" step="0.1" value="1.0"><span id="val-bullet-spd">1.0</span></div>
+        <hr style="border-color: #444; margin: 8px 0;">
+        <div class="dev-slider-row"><label>MG Dmg:</label><input type="range" id="dev-mg-dmg" min="0.1" max="2.0" step="0.05" value="0.3"><span id="val-mg-dmg">0.3</span></div>
+        <div class="dev-slider-row"><label>MG Rate:</label><input type="range" id="dev-mg-rate" min="1" max="30" step="1" value="8"><span id="val-mg-rate">8</span></div>
+    </div>
     <div id="transition-overlay"></div>
     <div id="saving-overlay" class="modal"><div class="modal-content"><h2>Saving game...</h2></div></div>
     <div id="autosave-notification"></div>
@@ -305,7 +441,7 @@
     <div id="start-over-confirm-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">DELETE WORLD?</h2><p>A new game will override your previous progress in this slot.</p><div class="flex gap-4"><button id="start-over-confirm-yes" class="modal-button">YES</button><button id="start-over-confirm-no" class="modal-button confirm-button">NO</button></div></div></div>
     <div id="restart-confirm-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">RESTART GAME?</h2><p>All progress will be lost.</p><div class="flex gap-4"><button id="restart-confirm-yes" class="modal-button">YES</button><button id="restart-confirm-no" class="modal-button confirm-button">NO</button></div></div></div>
     <div id="pc-controls-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">PC CONTROLS</h2><div id="pc-controls-list" class="text-left text-lg"></div><button id="pc-controls-back-btn" class="modal-button confirm-button">BACK</button></div></div>
-    <div id="options-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">OPTIONS</h2><button id="options-achievements-btn" class="modal-button info-button">🏆 ACHIEVEMENTS</button><button id="options-controls-btn" class="modal-button info-button">CONTROLS</button><div id="options-audio-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">AUDIO:</span><span id="audio-toggle-on" class="audio-toggle-option">ON</span><span id="audio-toggle-off" class="audio-toggle-option">OFF</span></div><label class="console-toggle-container info-button"><input type="checkbox" id="toggle-console-checkbox">Show Console Log</label><button id="options-delete-world-btn" class="modal-button" style="margin-top: 2rem;">DELETE WORLD</button><button id="options-back-btn" class="modal-button confirm-button">BACK</button></div></div>
+    <div id="options-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">OPTIONS</h2><button id="options-achievements-btn" class="modal-button info-button">🏆 ACHIEVEMENTS</button><button id="options-controls-btn" class="modal-button info-button">CONTROLS</button><div id="options-audio-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">AUDIO:</span><span id="audio-toggle-on" class="audio-toggle-option">ON</span><span id="audio-toggle-off" class="audio-toggle-option">OFF</span></div><label class="console-toggle-container info-button"><input type="checkbox" id="toggle-console-checkbox">Enable Developer Tools</label><button id="options-delete-world-btn" class="modal-button" style="margin-top: 2rem;">DELETE WORLD</button><button id="options-back-btn" class="modal-button confirm-button">BACK</button></div></div>
     
     <div id="garage-modal" class="modal">
         <div id="garage-ui-content" class="w-11/12 max-w-4xl h-5/6 max-h-[700px] bg-gray-800 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
@@ -381,7 +517,7 @@
 
 <script>
 // --- SETUP & STATE ---
-const GAME_VERSION = "Pre-Alpha 5.15";
+const GAME_VERSION = "Alpha 5";
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 const gameContainer = document.getElementById('game-container');
 const TARGET_DT = 1000 / 60; // The ideal time for one frame at 60fps
@@ -434,6 +570,8 @@ let modalStack = [];
 let isRespawning = false;
 let notificationQueue = [];
 let lastPingTime = 0;
+let uiState = { money: null, hp: null, ammo: null, blueprints: null };
+let debugConfig = { playerSpeedMult: 1.0, enemySpeedMult: 1.0, bulletSpeedMult: 1.0 };
 let deviceMode = 'desktop'; // 'desktop' or 'mobile'
 // W1.4 Save System State
 let currentSaveSlot = -1;
@@ -476,40 +614,57 @@ const medBayUpgrades = [
 ];
 const GARAGE_UNLOCK_COST = 250;
 
-// --- DYNAMIC ENGINE SOUND SYSTEM ---
-let enginePlayer; let engineFadeNode; let isEngineSoundReady = false;
+// --- DYNAMIC ENGINE SOUND SYSTEM (NATIVE) ---
+let engineCtx, engineGain, engineSource;
 const engineAudioUrl = 'https://dl.dropboxusercontent.com/scl/fi/3vkvoeltskmfuhnuoly2m/engine_trimmed_loopable.mp3?rlkey=d844chyrjkriy4ph61cyitn04&st=ehu6kt81';
-const FADE_TIME = 0.4; const MASTER_VOLUME = 10.8; const PITCH_START = 0.5; const PITCH_END = 1.0;
+const FADE_TIME = 0.4; const MASTER_VOLUME = 0.2; // Native volume is louder than Tone.js
+const PITCH_START = 1.0; const PITCH_END = 2.5;
+
 async function initEngineSound() {
-    if (enginePlayer) return;
+    if (engineCtx) return;
     try {
-        engineFadeNode = new Tone.Gain(0).toDestination();
-        enginePlayer = new Tone.Player({
-            url: engineAudioUrl,
-            loop: true,
-            playbackRate: PITCH_START,
-            volume: MASTER_VOLUME,
-            onload: () => {
-                console.log("Engine audio file loaded, starting playback.");
-                enginePlayer.start();
-                isEngineSoundReady = true;
-            },
-        }).connect(engineFadeNode);
-    } catch (error) {
-        console.error("Error initializing engine sound with Tone.js:", error);
-    }
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        engineCtx = new AudioContext();
+        engineGain = engineCtx.createGain();
+        engineGain.gain.value = 0;
+        engineGain.connect(engineCtx.destination);
+
+        const response = await fetch(engineAudioUrl);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await engineCtx.decodeAudioData(arrayBuffer);
+
+        engineSource = engineCtx.createBufferSource();
+        engineSource.buffer = audioBuffer;
+        engineSource.loop = true;
+        engineSource.playbackRate.value = PITCH_START;
+        engineSource.connect(engineGain);
+        engineSource.start(0);
+        console.log("Native Engine Audio Initialized");
+    } catch (e) { console.error("Engine Sound Init Error:", e); }
 }
+
 function updateEngineSound(deltaTime) {
-    if (!enginePlayer || !engineFadeNode || !player || !isEngineSoundReady) return;
+    if (!engineCtx || !engineSource || !engineGain || !player) return;
+    
     const isTryingToMove = (touchState.moveStick.x !== 0 || touchState.moveStick.y !== 0) || keys.w || keys.a || keys.s || keys.d;
-    const targetVolume = isTryingToMove ? 1.0 : 0.0;
-    const speedRatio = Math.min(1, Math.abs(player.currentSpeed) / 2.64);
+    const targetVolume = isTryingToMove ? MASTER_VOLUME : 0.0;
+    const now = engineCtx.currentTime;
+    
+    // Smooth volume fade
+    engineGain.gain.setTargetAtTime(targetVolume, now, FADE_TIME);
+
+    // Calculate Pitch
+    const speedRatio = Math.min(1, Math.abs(player.currentSpeed) / 2.0);
     let targetPitch = PITCH_START + (PITCH_END - PITCH_START) * speedRatio;
     if (isTryingToMove && speedRatio < 0.1) { targetPitch = PITCH_START; }
     targetPitch *= player.pitchPenalty;
 
-    engineFadeNode.gain.rampTo(targetVolume, FADE_TIME);
-    enginePlayer.playbackRate.value = targetPitch;
+    // Direct value assignment (Native works best with this for continuous updates)
+    engineSource.playbackRate.value = targetPitch;
+
+    if (isConsoleVisible) {
+        document.getElementById('console-output').textContent = `RPM: ${targetPitch.toFixed(2)} | dT: ${deltaTime.toFixed(2)}ms`;
+    }
 
     if (player.pitchPenalty < 1) {
         player.pitchPenalty = Math.min(1, player.pitchPenalty + (deltaTime / 300));
@@ -581,7 +736,8 @@ function initPlayerState(fullReset = false) {
 }
 function initWorldState() { 
     playerStats = { kills: 0, moneyEarned: 0, treesBroken: 0, unlockedAchievements: [], hasRespawnedOnce: false, hasDroppedMoneyOnce: false, hasSeenDeathTip: false }; 
-    worldState.visitedChunks.clear(); 
+    worldState.visitedChunks.clear();
+    worldState.pickups = []; // Reset pickups only on full initialization
     generateWorld(currentWorldId); 
     if (player) {
         player.x = worldState.base.center.x - player.width / 2;
@@ -843,6 +999,7 @@ function generateWorld(worldId) {
     const worldSeed = `${masterSeed}_${worldName}`;
     setSeed(worldSeed.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0));
 
+    // Reset terrain and enemies, but PRESERVE pickups (loot is global)
     worldState.worldObjects = []; worldState.enemies = []; worldState.decorations = []; worldState.baseDecorations = []; worldState.activeBursts = [];
 
     generateBase();
@@ -1361,6 +1518,9 @@ function updatePlayer(deltaTime, timeScale) {
     const adjustedAcceleration = 1 - Math.pow(1 - player.acceleration, timeScale);
     player.currentSpeed += (targetSpeed - player.currentSpeed) * adjustedAcceleration;
     
+    // Apply Debug Multiplier
+    player.currentSpeed *= debugConfig.playerSpeedMult;
+
     const pCenterX = player.x + player.width/2, pCenterY = player.y + player.height/2;
     const tileX = Math.floor(pCenterX / world.gridSize);
     const tileY = Math.floor(pCenterY / world.gridSize);
@@ -1466,7 +1626,7 @@ function updateEnemies(timeScale) {
                 }
                 
                 if (e.isFollowing) {
-                    const finalSpeed = e.speed * timeScale;
+                    const finalSpeed = e.speed * timeScale * debugConfig.enemySpeedMult;
                     const nextX = e.x + Math.cos(e.angle) * finalSpeed;
                     const nextY = e.y + Math.sin(e.angle) * finalSpeed;
                     if (!isCollidingWithObject(nextX, e.y, e.width, e.height)) e.x = nextX;
@@ -1510,7 +1670,7 @@ function updateEnemies(timeScale) {
                 e.targetPos.x = e.wanderBox.x + Math.random() * e.wanderBox.width;
                 e.targetPos.y = e.wanderBox.y + Math.random() * e.wanderBox.height;
             }
-            const wanderSpeed = 1.0 * timeScale;
+            const wanderSpeed = 1.0 * timeScale * debugConfig.enemySpeedMult;
             e.angle = Math.atan2(e.targetPos.y - e.y, e.targetPos.x - e.x);
             e.x = clamp(e.x + Math.cos(e.angle) * wanderSpeed, 0, world.width - e.width);
             e.y = clamp(e.y + Math.sin(e.angle) * wanderSpeed, 0, world.height - e.height);
@@ -1531,10 +1691,10 @@ function dropLoot(x, y, enemyType) {
         const loot = lootOptions[Math.floor(Math.random() * lootOptions.length)];
         if (loot.type === 'money') {
             const validPos = findValidSpawnPoint(x, y, 24, 16);
-            worldState.pickups.push({type:'money', value: loot.value, x: validPos.x, y: validPos.y, radius: 10});
+            worldState.pickups.push({type:'money', value: loot.value, x: validPos.x, y: validPos.y, radius: 10, worldId: currentWorldId});
         } else { 
             const validPos = findValidSpawnPoint(x, y, 35, 35);
-            worldState.pickups.push({type:'blueHeart', x: validPos.x, y: validPos.y, radius: 18});
+            worldState.pickups.push({type:'blueHeart', x: validPos.x, y: validPos.y, radius: 18, worldId: currentWorldId});
         }
         return;
     }
@@ -1542,7 +1702,7 @@ function dropLoot(x, y, enemyType) {
     // 3.3 Blueprint Hardening: Comprehensive check for Machine Gun blueprint
     if (enemyType === 'elite' && !player.fabricated.machineGun && !player.installedBlueprints.machineGun && player.carryingBlueprints.indexOf('machineGun') === -1 && !mgBlueprintOnFloor && Math.random() < 0.05) {
         const validPos = findValidSpawnPoint(x, y, 30, 30);
-        worldState.pickups.push({type:'blueprint', id: 'machineGun', x: validPos.x, y: validPos.y, size: 30});
+        worldState.pickups.push({type:'blueprint', id: 'machineGun', x: validPos.x, y: validPos.y, size: 30, worldId: currentWorldId});
         return;
     }
 
@@ -1550,7 +1710,7 @@ function dropLoot(x, y, enemyType) {
         // 3.3 Blueprint Hardening: Comprehensive check for Nitro Boost blueprint
         if (!player.fabricated.nitroBoost && !player.installedBlueprints.nitroBoost && player.carryingBlueprints.indexOf('nitroBoost') === -1 && !nbBlueprintOnFloor && Math.random() < 0.25) {
             const validPos = findValidSpawnPoint(x, y, 30, 30);
-            worldState.pickups.push({type:'blueprint', id: 'nitroBoost', x: validPos.x, y: validPos.y, size: 30});
+            worldState.pickups.push({type:'blueprint', id: 'nitroBoost', x: validPos.x, y: validPos.y, size: 30, worldId: currentWorldId});
             return;
         } else {
             const lootOptions = [
@@ -1560,23 +1720,23 @@ function dropLoot(x, y, enemyType) {
             const loot = lootOptions[Math.floor(Math.random() * lootOptions.length)];
             if (loot.type === 'money') {
                 const validPos = findValidSpawnPoint(x, y, 24, 16);
-                worldState.pickups.push({type:'money', value: loot.value, x: validPos.x, y: validPos.y, radius: 10});
+                worldState.pickups.push({type:'money', value: loot.value, x: validPos.x, y: validPos.y, radius: 10, worldId: currentWorldId});
             } else { 
                 const validPos = findValidSpawnPoint(x, y, 35, 35);
-                worldState.pickups.push({type:'blueHeart', x: validPos.x, y: validPos.y, radius: 18});
+                worldState.pickups.push({type:'blueHeart', x: validPos.x, y: validPos.y, radius: 18, worldId: currentWorldId});
             }
             return;
         }
     }
 
-    const rand = Math.random(); let loot; if (enemyType === 'elite') { if (rand < 0.33) loot = {type:'money', value: 50 }; else if (rand < 0.66) loot = {type:'money', value: 100 }; else loot = {type:'money', value: 500 }; } else { if (rand < 0.25) loot = {type:'money', value: 5 }; else if (rand < 0.5) loot = {type:'money', value: 10 }; else if (rand < 0.75) loot = {type:'money', value: 25 }; else loot = {type:'heart', count: 1 }; } if (loot.type === 'heart') { for (let i = 0; i < loot.count; i++) { const validPos = findValidSpawnPoint(x + (i * 20 - 10), y, 30, 30); worldState.pickups.push({type:'heart', x: validPos.x, y: validPos.y, radius: 15}); } } else { const validPos = findValidSpawnPoint(x, y, 24, 16); worldState.pickups.push({type:'money', value: loot.value, x: validPos.x, y: validPos.y, radius: 10}); } }
+    const rand = Math.random(); let loot; if (enemyType === 'elite') { if (rand < 0.33) loot = {type:'money', value: 50 }; else if (rand < 0.66) loot = {type:'money', value: 100 }; else loot = {type:'money', value: 500 }; } else { if (rand < 0.25) loot = {type:'money', value: 5 }; else if (rand < 0.5) loot = {type:'money', value: 10 }; else if (rand < 0.75) loot = {type:'money', value: 25 }; else loot = {type:'heart', count: 1 }; } if (loot.type === 'heart') { for (let i = 0; i < loot.count; i++) { const validPos = findValidSpawnPoint(x + (i * 20 - 10), y, 30, 30); worldState.pickups.push({type:'heart', x: validPos.x, y: validPos.y, radius: 15, worldId: currentWorldId}); } } else { const validPos = findValidSpawnPoint(x, y, 24, 16); worldState.pickups.push({type:'money', value: loot.value, x: validPos.x, y: validPos.y, radius: 10, worldId: currentWorldId}); } }
 function updateBullets(timeScale) {
     for (let i = worldState.bullets.length - 1; i >= 0; i--) {
         const b = worldState.bullets[i];
         if (!b) continue;
 
-        b.x += b.dx * timeScale;
-        b.y += b.dy * timeScale;
+        b.x += b.dx * timeScale * debugConfig.bulletSpeedMult;
+        b.y += b.dy * timeScale * debugConfig.bulletSpeedMult;
 
         // 1. Check if bullet is out of bounds
         if (b.x < camera.x - 100 || b.x > camera.x + camera.width + 100 || b.y < camera.y - 100 || b.y > camera.y + camera.height + 100) {
@@ -1666,7 +1826,7 @@ function updateBullets(timeScale) {
         }
     }
 }
-function updatePickups(){ if(player.isDead || isPlayerInGarage)return; for(let i=worldState.pickups.length-1;i>=0;i--){ const p=worldState.pickups[i]; if (p.type === 'cashBag' && p.worldId !== currentWorldId) continue; const pickupWidth = p.width || p.size || p.radius * 2; const pickupHeight = p.height || p.size || p.radius * 2; if(player.x < p.x + pickupWidth && player.x + player.width > p.x && player.y < p.y + pickupHeight && player.y + player.height > p.y){ const now = Date.now(); if(now - lastPickupSoundTime > 50) { playSound("pickup","C5","16n"); lastPickupSoundTime = now; } if(p.type==='heart'&&player.hp<player.maxHp){ player.hp=Math.min(player.maxHp,player.hp+1); } else if(p.type==='money' || p.type === 'cashBag'){ player.moneyFloat+=p.value;playerStats.moneyEarned+=p.value; if(p.value === 5) unlockAchievement('fiveDollars'); if(p.type === 'cashBag') { worldState.deathBags = worldState.deathBags.filter(bag => bag.id !== p.id); } } else if (p.type === 'blueprint' && player.carryingBlueprints.indexOf(p.id) === -1) { player.carryingBlueprints.push(p.id); } else if (p.type === 'blueHeart') { player.hp = Math.min(player.maxHp, player.hp + 25); } worldState.pickups.splice(i, 1); } } }
+function updatePickups(){ if(player.isDead || isPlayerInGarage)return; for(let i=worldState.pickups.length-1;i>=0;i--){ const p=worldState.pickups[i]; if (p.worldId !== undefined && p.worldId !== currentWorldId) continue; const pickupWidth = p.width || p.size || p.radius * 2; const pickupHeight = p.height || p.size || p.radius * 2; if(player.x < p.x + pickupWidth && player.x + player.width > p.x && player.y < p.y + pickupHeight && player.y + player.height > p.y){ const now = Date.now(); if(now - lastPickupSoundTime > 50) { playSound("pickup","C5","16n"); lastPickupSoundTime = now; } if(p.type==='heart'&&player.hp<player.maxHp){ player.hp=Math.min(player.maxHp,player.hp+1); } else if(p.type==='money' || p.type === 'cashBag'){ player.moneyFloat+=p.value;playerStats.moneyEarned+=p.value; if(p.value === 5) unlockAchievement('fiveDollars'); if(p.type === 'cashBag') { worldState.deathBags = worldState.deathBags.filter(bag => bag.id !== p.id); } } else if (p.type === 'blueprint' && player.carryingBlueprints.indexOf(p.id) === -1) { player.carryingBlueprints.push(p.id); } else if (p.type === 'blueHeart') { player.hp = Math.min(player.maxHp, player.hp + 25); } worldState.pickups.splice(i, 1); } } }
 function updateCamera() { if (player.isDead || isPlayerInGarage) return; camera.targetX = player.x - camera.width / 2; camera.targetY = player.y - camera.height / 2; camera.x += (camera.targetX - camera.x) * 0.1; camera.y += (camera.targetY - camera.y) * 0.1; if (camera.shake > 0) { camera.x += (Math.random() - 0.5) * camera.shake; camera.y += (Math.random() - 0.5) * camera.shake; camera.shake *= 0.9; } camera.x = clamp(camera.x, 0, world.width - camera.width); camera.y = clamp(camera.y, 0, world.height - camera.height); }
 function updateBase(deltaTime) {
     if (isPlayerInGarage) return;
@@ -1904,7 +2064,7 @@ function drawWorld() {
 }
 function drawDynamicElements() {
     for (const p of worldState.pickups) {
-        if (p.type === 'cashBag' && p.worldId !== currentWorldId) continue;
+        if (p.worldId !== undefined && p.worldId !== currentWorldId) continue;
 
         if (p.type === 'money') { ctx.strokeStyle = 'black'; ctx.lineWidth = 4; ctx.strokeRect(p.x - 12, p.y - 8, 24, 16); ctx.fillStyle = '#22c55e'; ctx.fillRect(p.x - 12, p.y - 8, 24, 16); ctx.fillStyle='white'; ctx.font='bold 12px "Times New Roman", serif'; ctx.textAlign = 'center'; ctx.fillText(`$${p.value}`, p.x, p.y+4); } else if (p.type === 'heart') { drawStroked(() => { ctx.fillStyle = '#e11d48'; ctx.beginPath(); ctx.moveTo(p.x, p.y - p.radius / 2); ctx.bezierCurveTo(p.x, p.y - p.radius, p.x - p.radius, p.y - p.radius, p.x - p.radius, p.y); ctx.bezierCurveTo(p.x - p.radius, p.y + p.radius / 2, p.x, p.y + p.radius, p.x, p.y + p.radius); ctx.bezierCurveTo(p.x, p.y + p.radius, p.x + p.radius, p.y + p.radius / 2, p.x + p.radius, p.y); ctx.bezierCurveTo(p.x + p.radius, p.y - p.radius, p.x, p.y - p.radius, p.x, p.y - p.radius / 2); ctx.fill(); }); } else if (p.type === 'cashBag') { drawCashBag(p.x, p.y, p.size); } else if (p.type === 'blueprint') { drawBlueprint(p.x, p.y, p.size, p.id); } else if (p.type === 'blueHeart') { drawBlueHeart(p.x, p.y, p.radius); } 
     }
@@ -2161,21 +2321,37 @@ function updateUI() {
         blueprintDisplay = document.querySelector('.desktop-header .header-right #blueprint-display');
     }
 
-    moneyDisplay.classList.toggle('money-pulse', player.isOnCashBay);
-    moneyDisplay.textContent = `$${formatMoney(player.moneyFloat)}`;
+    // Money Update (Dirty Check)
+    const currentMoney = Math.floor(player.moneyFloat); // Check against integer for UI stability
+    if (currentMoney !== uiState.money || player.isOnCashBay) {
+        moneyDisplay.classList.toggle('money-pulse', player.isOnCashBay);
+        moneyDisplay.textContent = `$${formatMoney(player.moneyFloat)}`;
+        uiState.money = currentMoney;
+    }
 
-    const hpDisplayVal = Number.isInteger(player.hp) ? player.hp : player.hp.toFixed(1);
-    healthDisplay.textContent = `${hpDisplayVal}/${player.maxHp} HP`;
+    // Health Update (Dirty Check)
+    const currentHp = player.hp;
+    if (currentHp !== uiState.hp) {
+        const hpDisplayVal = Number.isInteger(player.hp) ? player.hp : player.hp.toFixed(1);
+        healthDisplay.textContent = `${hpDisplayVal}/${player.maxHp} HP`;
+        healthDisplay.classList.toggle('health-pulse', player.hp <= (player.maxHp * 0.25) && !player.isDead);
+        uiState.hp = currentHp;
+    }
     
-    if (player.carryingBlueprints.length > 0) {
-        blueprintDisplay.style.display = 'flex';
-        blueprintDisplay.innerHTML = player.carryingBlueprints.map(id => {
-            if (id === 'machineGun') return '<span>📃MG</span>';
-            if (id === 'nitroBoost') return '<span>📃NB</span>';
-            return '';
-        }).join('');
-    } else {
-        blueprintDisplay.style.display = 'none';
+    // Blueprint Update (Dirty Check)
+    const currentBlueprints = player.carryingBlueprints.join(',');
+    if (currentBlueprints !== uiState.blueprints) {
+        if (player.carryingBlueprints.length > 0) {
+            blueprintDisplay.style.display = 'flex';
+            blueprintDisplay.innerHTML = player.carryingBlueprints.map(id => {
+                if (id === 'machineGun') return '<span>📃MG</span>';
+                if (id === 'nitroBoost') return '<span>📃NB</span>';
+                return '';
+            }).join('');
+        } else {
+            blueprintDisplay.style.display = 'none';
+        }
+        uiState.blueprints = currentBlueprints;
     }
 
     document.getElementById('boost-btn').style.display = player.fabricated.nitroBoost ? 'flex' : 'none';
@@ -2184,20 +2360,26 @@ function updateUI() {
     if (player.equipment.turret === 'machineGun') {
         ammoDisplay.style.display = 'block';
         document.getElementById('reload-btn').style.display = 'block';
-        if (player.mg.isReloading) {
-            ammoDisplay.textContent = 'Reloading...';
-            const reloadProgress = (Date.now() - player.mg.lastReloadTime) / player.mg.reloadTime;
-            indicatorYellow.style.backgroundColor = reloadProgress > 0.9 ? '#facc15' : '#1a202c';
-            indicatorGreen.style.backgroundColor = '#1a202c';
-        } else {
-            ammoDisplay.textContent = `${player.mg.currentAmmo}/${player.mg.magSize}`;
-            if (player.mg.currentAmmo === 0) {
-                 indicatorYellow.style.backgroundColor = '#1a202c';
-                 indicatorGreen.style.backgroundColor = '#1a202c';
+        
+        // Ammo Dirty Check
+        const ammoState = `${player.mg.isReloading}-${player.mg.currentAmmo}`;
+        if (ammoState !== uiState.ammo) {
+            if (player.mg.isReloading) {
+                ammoDisplay.textContent = 'Reloading...';
+                const reloadProgress = (Date.now() - player.mg.lastReloadTime) / player.mg.reloadTime;
+                indicatorYellow.style.backgroundColor = reloadProgress > 0.9 ? '#facc15' : '#1a202c';
+                indicatorGreen.style.backgroundColor = '#1a202c';
             } else {
-                indicatorYellow.style.backgroundColor = '#facc15';
-                indicatorGreen.style.backgroundColor = '#22c55e';
+                ammoDisplay.textContent = `${player.mg.currentAmmo}/${player.mg.magSize}`;
+                if (player.mg.currentAmmo === 0) {
+                     indicatorYellow.style.backgroundColor = '#1a202c';
+                     indicatorGreen.style.backgroundColor = '#1a202c';
+                } else {
+                    indicatorYellow.style.backgroundColor = '#facc15';
+                    indicatorGreen.style.backgroundColor = '#22c55e';
+                }
             }
+            uiState.ammo = ammoState;
         }
     } else {
         ammoDisplay.style.display = 'none';
@@ -2206,7 +2388,6 @@ function updateUI() {
         if (cooldownProgress >= 1) { indicatorYellow.style.backgroundColor = '#facc15'; indicatorYellow.style.boxShadow = '0 0 8px #facc15'; indicatorGreen.style.backgroundColor = '#22c55e'; indicatorGreen.style.boxShadow = '0 0 8px #22c55e'; } else if (cooldownProgress >= 0.8) { indicatorYellow.style.backgroundColor = '#facc15'; indicatorYellow.style.boxShadow = '0 0 8px #facc15'; indicatorGreen.style.backgroundColor = '#1a202c'; indicatorGreen.style.boxShadow = 'none'; } else { indicatorYellow.style.backgroundColor = '#1a202c'; indicatorGreen.style.backgroundColor = '#1a202c'; indicatorYellow.style.boxShadow = 'none'; indicatorGreen.style.boxShadow = 'none'; }
     }
     
-    healthDisplay.classList.toggle('health-pulse', player.hp <= (player.maxHp * 0.25) && !player.isDead);
     if (isDebugVisible) { const debugPanel = document.getElementById('debug-panel'); debugPanel.innerHTML = `World: ${currentWorldId === 0 ? 'Overworld' : 'Wasteland'}<br>Juggernauts: ${worldState.enemies.filter(e => e.type === 'juggernaut').length}<br>Cannon: ${player.cannonTier}<br>Engine: ${player.engineTier}<br>Armor: ${player.armorTier}`; }
 }
 function updateWeaponStats() {
@@ -2487,7 +2668,7 @@ function gameLoop(timestamp) {
     }
 
     if (isConsoleVisible) {
-        document.getElementById('on-screen-console').textContent = `dT: ${deltaTime.toFixed(2)}ms`;
+        document.getElementById('console-output').textContent = `dT: ${deltaTime.toFixed(2)}ms`;
     }
     
 // X1.2: Silent, more frequent autosave
@@ -2576,6 +2757,11 @@ function setupGlobalListeners() {
     const addSafeEventListener = (elementId, handler, event = eventType) => { const element = document.getElementById(elementId); if (element) element.addEventListener(event, (e) => { e.preventDefault(); handler(e); }, { passive: false }); };
 
     document.body.addEventListener(eventType, (e) => {
+        // Resume Native Engine Context on first interaction (iOS requirement)
+        if (engineCtx && engineCtx.state === 'suspended') {
+            engineCtx.resume();
+        }
+        
         if (e.target.closest('.modal-button, .utility-btn, .start-btn, .btn, .item-card, .category-btn')) {
             if (sfx && sfx.uiClick && sfx.uiClick.loaded) {
                 if (sfx.uiClick.state === "started") sfx.uiClick.stop();
@@ -2595,7 +2781,45 @@ function setupGlobalListeners() {
     if (consoleCheckbox) {
         consoleCheckbox.addEventListener('change', (e) => {
             isConsoleVisible = e.target.checked;
-            document.getElementById('on-screen-console').style.display = isConsoleVisible ? 'block' : 'none';
+            document.getElementById('dev-tools-panel').style.display = isConsoleVisible ? 'block' : 'none';
+        });
+    }
+    
+    // Dev Tool Sliders
+    const setupSlider = (id, key) => {
+        const slider = document.getElementById(id);
+        const display = document.getElementById(id.replace('dev', 'val'));
+        if (slider) {
+            slider.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                debugConfig[key] = val;
+                display.textContent = val.toFixed(1);
+            });
+        }
+    };
+    setupSlider('dev-player-spd', 'playerSpeedMult');
+    setupSlider('dev-enemy-spd', 'enemySpeedMult');
+    setupSlider('dev-bullet-spd', 'bulletSpeedMult');
+
+    // MG Tuning Logic
+    const mgDmgSlider = document.getElementById('dev-mg-dmg');
+    if (mgDmgSlider) {
+        mgDmgSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('val-mg-dmg').textContent = val.toFixed(2);
+            if (player.equipment.turret === 'machineGun') {
+                player.bulletDamage = val;
+            }
+        });
+    }
+    const mgRateSlider = document.getElementById('dev-mg-rate');
+    if (mgRateSlider) {
+        mgRateSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            document.getElementById('val-mg-rate').textContent = val;
+            if (player.equipment.turret === 'machineGun') {
+                player.fireRate = 1000 / val;
+            }
         });
     }
 
