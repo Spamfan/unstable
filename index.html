@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tank Tycoon (Alpha 5)</title>
+    <title>Tank Tycoon (Alpha 7)</title>
     <!-- Tailwind Removed for Performance -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
@@ -421,7 +421,6 @@
     <div id="ping-spy-panel"></div>
     <div id="dev-tools-panel">
         <div id="console-output">Console Ready...</div>
-        <div class="dev-slider-row"><label>Player Spd:</label><input type="range" id="dev-player-spd" min="0.1" max="5.0" step="0.1" value="1.0"><span id="val-player-spd">1.0</span></div>
         <div class="dev-slider-row"><label>Enemy Spd:</label><input type="range" id="dev-enemy-spd" min="0.1" max="5.0" step="0.1" value="1.0"><span id="val-enemy-spd">1.0</span></div>
         <div class="dev-slider-row"><label>Bullet Spd:</label><input type="range" id="dev-bullet-spd" min="0.1" max="5.0" step="0.1" value="1.0"><span id="val-bullet-spd">1.0</span></div>
         <hr style="border-color: #444; margin: 8px 0;">
@@ -435,13 +434,13 @@
     <!-- Modals -->
     <div id="info-modal" class="modal"><div class="modal-content"><h2 id="info-modal-title" class="text-3xl"></h2><p id="info-modal-text"></p><button id="info-modal-close" class="modal-button confirm-button">OK</button></div></div>
     <div id="death-modal" class="modal"><div class="modal-content"><h2 class="text-3xl mb-4">YOU DIED</h2><button id="respawn-btn" class="modal-button">RESPAWN</button></div></div>
-    <div id="pause-modal" class="modal"><div class="modal-content"><h2 id="pause-modal-title" class="text-3xl">PAUSED</h2><p id="autosave-confirm-text" style="color:white; font-size: 0.9rem; height: 1.2rem;"></p><button id="resume-btn" class="modal-button confirm-button">RESUME</button><button id="admin-menu-btn" class="modal-button admin-button-color">ADMIN TOOLS</button><button id="achievements-btn" class="modal-button info-button">🏆 ACHIEVEMENTS</button><button id="pause-options-btn" class="modal-button info-button">OPTIONS</button><button id="main-menu-btn" class="modal-button">MAIN MENU</button></div></div>
+    <div id="pause-modal" class="modal"><div class="modal-content"><h2 id="pause-modal-title" class="text-3xl">PAUSED</h2><p id="autosave-confirm-text" style="color:white; font-size: 0.9rem; height: 1.2rem;"></p><button id="resume-btn" class="modal-button confirm-button">RESUME</button><button id="pause-respawn-btn" class="modal-button">RESPAWN</button><button id="admin-menu-btn" class="modal-button admin-button-color">ADMIN TOOLS</button><button id="achievements-btn" class="modal-button info-button">🏆 ACHIEVEMENTS</button><button id="pause-options-btn" class="modal-button info-button">OPTIONS</button><button id="main-menu-btn" class="modal-button">MAIN MENU</button></div></div>
     <div id="achievements-modal" class="modal"><div class="modal-content"><h2 id="achievements-title" class="text-3xl">ACHIEVEMENTS</h2><ul id="achievements-list"></ul><button id="achievements-back-btn" class="modal-button confirm-button">BACK</button></div></div>
     <div id="save-load-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">SELECT SLOT</h2><div id="save-slots-container" class="w-full flex flex-col gap-4"></div></div></div>
     <div id="start-over-confirm-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">DELETE WORLD?</h2><p>A new game will override your previous progress in this slot.</p><div class="flex gap-4"><button id="start-over-confirm-yes" class="modal-button">YES</button><button id="start-over-confirm-no" class="modal-button confirm-button">NO</button></div></div></div>
     <div id="restart-confirm-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">RESTART GAME?</h2><p>All progress will be lost.</p><div class="flex gap-4"><button id="restart-confirm-yes" class="modal-button">YES</button><button id="restart-confirm-no" class="modal-button confirm-button">NO</button></div></div></div>
     <div id="pc-controls-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">PC CONTROLS</h2><div id="pc-controls-list" class="text-left text-lg"></div><button id="pc-controls-back-btn" class="modal-button confirm-button">BACK</button></div></div>
-    <div id="options-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">OPTIONS</h2><button id="options-achievements-btn" class="modal-button info-button">🏆 ACHIEVEMENTS</button><button id="options-controls-btn" class="modal-button info-button">CONTROLS</button><div id="options-audio-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">AUDIO:</span><span id="audio-toggle-on" class="audio-toggle-option">ON</span><span id="audio-toggle-off" class="audio-toggle-option">OFF</span></div><label class="console-toggle-container info-button"><input type="checkbox" id="toggle-console-checkbox">Enable Developer Tools</label><button id="options-delete-world-btn" class="modal-button" style="margin-top: 2rem;">DELETE WORLD</button><button id="options-back-btn" class="modal-button confirm-button">BACK</button></div></div>
+    <div id="options-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">OPTIONS</h2><button id="options-achievements-btn" class="modal-button info-button">🏆 ACHIEVEMENTS</button><button id="options-controls-btn" class="modal-button info-button">CONTROLS</button><div id="options-audio-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">AUDIO:</span><span id="audio-toggle-on" class="audio-toggle-option">ON</span><span id="audio-toggle-off" class="audio-toggle-option">OFF</span></div><div id="options-veg-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">VEGETATION:</span><span id="veg-toggle-on" class="audio-toggle-option">ON</span><span id="veg-toggle-off" class="audio-toggle-option">OFF</span></div><button id="options-delete-world-btn" class="modal-button" style="margin-top: 2rem;">DELETE WORLD</button><button id="options-back-btn" class="modal-button confirm-button">BACK</button></div></div>
     
     <div id="garage-modal" class="modal">
         <div id="garage-ui-content" class="w-11/12 max-w-4xl h-5/6 max-h-[700px] bg-gray-800 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
@@ -486,6 +485,8 @@
         <div class="modal-content" style="max-width: 320px; flex-direction: column; gap: 1rem;">
             <h2 class="text-3xl">ADMIN TOOLS</h2>
             
+            <label class="console-toggle-container info-button"><input type="checkbox" id="toggle-console-checkbox">Enable Developer Tools</label>
+
             <div class="w-full flex flex-col gap-2 mb-2">
                 <button id="admin-max-base" class="modal-button admin-button-color admin-button-large">Max out:<br>base, $, HP</button>
             </div>
@@ -498,7 +499,6 @@
             </div>
 
             <div class="w-full flex flex-col gap-2">
-                <button id="admin-respawn" class="modal-button admin-button">Respawn</button>
                 <button id="admin-hp-1" class="modal-button admin-button">HP=1</button>
                 <button id="admin-money-0" class="modal-button admin-button">$=0</button>
             </div>
@@ -506,6 +506,8 @@
             <button id="admin-tools-exit" class="modal-button confirm-button mt-2">EXIT</button>
         </div>
     </div>
+    
+    <div id="respawn-confirm-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">ARE YOU SURE?</h2><p>Respawning will reset your position and current run status.</p><div class="flex gap-4"><button id="respawn-confirm-yes" class="modal-button">YES</button><button id="respawn-confirm-no" class="modal-button confirm-button">NO</button></div></div></div>
 
     <div class="mobile-controls">
         <div id="move-stick-area"><div id="move-stick-thumb"></div></div>
@@ -517,11 +519,12 @@
 
 <script>
 // --- SETUP & STATE ---
-const GAME_VERSION = "Alpha 5";
+const GAME_VERSION = "Alpha 7";
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 const gameContainer = document.getElementById('game-container');
 const TARGET_DT = 1000 / 60; // The ideal time for one frame at 60fps
 const world = { width: 4000, height: 4000, gridSize: 40, chunkSize: 16 * 40 };
+let settings = { vegetation: true };
 let camera = { x: 0, y: 0, width: 0, height: 0, targetX: 0, targetY: 0, shake: 0, zoom: 1.0 };
 let player, keys, touchState, sfx, playerStats, achievements;
 let worldState = { worldObjects: [], bullets: [], enemies: [], deadEnemies: [], pickups: [], terrain: [], base: {}, visitedChunks: new Set(), particles: [], decorations: [], baseDecorations: [], activeBursts: [], pings: [], deathBags: [], tileMap: [], activeFollowerCount: 0 };
@@ -589,8 +592,13 @@ const GRID_CELL_SIZE = 200;
 
 // R2.0: Garage Data
 const GLOBAL_MAX_STATS = { Damage: 1, 'Fire Rate': 8 };
-const MAX_STATS = { cannon: { Damage: 1, 'Fire Rate': 3, 'Bullet Speed': 150 }, machineGun: { Damage: 0.3, 'Fire Rate': 8, Magazine: 32 }, engine: { Speed: 230 }, armor: { 'Block Chance': 1.0 }, nitro: { 'Boost Power': 3, 'Duration': 1, 'Cooldown': 5 } };
+const MAX_STATS = { cannon: { Damage: 1, 'Fire Rate': 3, 'Bullet Speed': 150 }, machineGun: { Damage: 1.5, 'Fire Rate': 10, Magazine: 32 }, engine: { Speed: 230 }, armor: { 'Block Chance': 1.0 }, nitro: { 'Boost Power': 3, 'Duration': 1, 'Cooldown': 5 } };
 const garageStandardCannonUpgrades = [ { title: "Standard Cannon (Mk. I)", cost: 0, description: "A reliable, all-purpose starting cannon.", stats: { 'Damage': 1, 'Fire Rate': 1, 'Bullet Speed': 100 }, nextUpgradeEffect: "+25% Bullet Speed" }, { title: "Enhanced Cannon (Mk. II)", cost: 500, description: "A reliable, all-purpose faster momentum cannon.", stats: { 'Damage': 1, 'Fire Rate': 1, 'Bullet Speed': 125 }, nextUpgradeEffect: "Unlocks Burst Fire (2 shots)" }, { title: "Enhanced Burst Cannon (Mk. III)", cost: 2500, description: "A burst-fire, high momentum firing cannon.", stats: { 'Damage': 1, 'Fire Rate': 2, 'Bullet Speed': 125 }, nextUpgradeEffect: "+25% Bullet Speed (total +50%)" }, { title: "Premium Burst-Fire Cannon (Mk. IV)", cost: 15000, description: "A burst-fire, very high bullet speed cannon.", stats: { 'Damage': 1, 'Fire Rate': 2, 'Bullet Speed': 150 }, nextUpgradeEffect: "Unlocks Burst Fire (3 shots)" }, { title: "Triple Burst-Fire Cannon (Mk. V)", cost: 75000, description: "A triple burst firing cannon with high bullet momentum.", stats: { 'Damage': 1, 'Fire Rate': 3, 'Bullet Speed': 150 }, nextUpgradeEffect: "MAX TIER" } ];
+const garageMachineGunUpgrades = [
+    { title: "Machine Gun (Tier 1)", cost: 0, description: "Shreds light armor with a high rate of fire.", stats: { 'Damage': 0.3, 'Fire Rate': 8 }, nextUpgradeEffect: "Unlock Heavy Machine Gun" },
+    { title: "Heavy Machine Gun (Tier 2)", cost: 50000, description: "Upgraded with high-caliber rounds. Tears through standard plating like paper.", stats: { 'Damage': 1.0, 'Fire Rate': 10 }, nextUpgradeEffect: "Unlock Reaper Chain Gun" },
+    { title: "Reaper Chain Gun (Tier 3)", cost: 200000, description: "A devastating rotary cannon. Deletes almost anything in its path.", stats: { 'Damage': 1.5, 'Fire Rate': 10 }, nextUpgradeEffect: "MAX TIER" }
+];
 const garageEngineUpgrades = [ { title: "Standard Engine (Mk. I)", cost: 0, description: "Default engine block.", stats: { 'Speed': 100 }, nextUpgradeEffect: "+10% Speed" }, { title: "Tuned Engine (Mk. II)", cost: 400, description: "Slightly improved performance.", stats: { 'Speed': 110 }, nextUpgradeEffect: "+10% Speed (total +20%)" }, { title: "Performance Engine (Mk. III)", cost: 2000, description: "Noticeably faster.", stats: { 'Speed': 120 }, nextUpgradeEffect: "+10% Speed (total +30%)" }, { title: "Racing Engine (Mk. IV)", cost: 12000, description: "Professional-grade speed.", stats: { 'Speed': 130 }, nextUpgradeEffect: "+20% Speed (total +50%)" }, { title: "Experimental Engine (Mk. V)", cost: 60000, description: "Maximum legal speed.", stats: { 'Speed': 150 }, nextUpgradeEffect: "+20% Speed (total +70%)" }, { title: "Overclocked Engine (Mk. VI)", cost: 300000, description: "Pushing the engine beyond its recommended limits for a significant speed advantage.", stats: { 'Speed': 170 }, nextUpgradeEffect: "+25% Speed (total +95%)" }, { title: "Singularity Engine (Mk. VII)", cost: 1500000, description: "A marvel of engineering, powered by a contained micro-singularity.", stats: { 'Speed': 195 }, nextUpgradeEffect: "+35% Speed (total +130%)" }, { title: "Hyperdrive Engine (Mk. VIII)", cost: 7500000, description: "The absolute pinnacle of propulsion technology, bordering on theoretical physics.", stats: { 'Speed': 230 }, nextUpgradeEffect: "MAX TIER" } ];
 const garageArmorUpgrades = [ { title: "Reinforced Plating (Tier 1)", cost: 10000, description: "Adds a basic layer of protection.", stats: { 'Block Chance': 0.05 }, nextUpgradeEffect: "+5% Block Chance" }, { title: "Composite Armor (Tier 2)", cost: 50000, description: "Advanced materials provide better damage mitigation.", stats: { 'Block Chance': 0.10 }, nextUpgradeEffect: "+10% Block Chance" }, { title: "Reactive Armor (Tier 3)", cost: 250000, description: "Explosive plates offer superior defense.", stats: { 'Block Chance': 0.20 }, nextUpgradeEffect: "MAX TIER" } ];
 const garageBlueprintData = { machineGun: { id: 'machineGun', title: "Machine Gun", cost: 20000, description: "Shreds light armor with a high rate of fire.", stats: MAX_STATS.machineGun }, nitroBoost: { id: 'nitroBoost', title: "Nitro Boost", cost: 100000, description: "Provides a 300% speed boost for 1 second, with a 5 second cooldown." } };
@@ -617,8 +625,8 @@ const GARAGE_UNLOCK_COST = 250;
 // --- DYNAMIC ENGINE SOUND SYSTEM (NATIVE) ---
 let engineCtx, engineGain, engineSource;
 const engineAudioUrl = 'https://dl.dropboxusercontent.com/scl/fi/3vkvoeltskmfuhnuoly2m/engine_trimmed_loopable.mp3?rlkey=d844chyrjkriy4ph61cyitn04&st=ehu6kt81';
-const FADE_TIME = 0.4; const MASTER_VOLUME = 0.2; // Native volume is louder than Tone.js
-const PITCH_START = 1.0; const PITCH_END = 2.5;
+const FADE_TIME = 0.4; const MASTER_VOLUME = 6.0; // Even Louder for Alpha 7
+const PITCH_START = 0.2; const PITCH_END = 0.85; // Capped Low: Deep rumble -> Heavy rev (No drilling)
 
 async function initEngineSound() {
     if (engineCtx) return;
@@ -697,7 +705,7 @@ function initPlayerState(fullReset = false) {
         prevDx: 0, prevDy: 0, pitchPenalty: 1, lastHealParticleTime: 0, lastHealTickTime: 0,
         speed: 1.94, currentSpeed: 0,
         acceleration: 0.05,
-        cannonTier: 1, engineTier: 1, armorTier: 0, blockChance: 0,
+        cannonTier: 1, machineGunTier: 1, engineTier: 1, armorTier: 0, blockChance: 0,
         deathTimestamps: [], killTimestamps: [],
         canEnterGarage: true, isOnCashBay: false, lastMoneyParticleTime: 0,
         blockEffect: { active: false, time: 0, radius: 0 },
@@ -1083,7 +1091,8 @@ function generateWorld(worldId) {
                 const tile = worldState.tileMap[y][x];
                  if (isInsideRect(worldX, worldY, worldState.base)) continue;
                 if (tile === TILE_TYPE.SAND || tile === TILE_TYPE.DIRT) {
-                    if (seededRng() < 0.5) { worldState.decorations.push({x: worldX + seededRng() * world.gridSize, y: worldY + seededRng() * world.gridSize, angle: seededRng() * Math.PI, length: seededRng() * 10 + 5, dark: false}); }
+                    const decorationChance = deviceMode === 'mobile' ? 0.25 : 0.5; // 50% less grass on mobile
+                    if (seededRng() < decorationChance) { worldState.decorations.push({x: worldX + seededRng() * world.gridSize, y: worldY + seededRng() * world.gridSize, angle: seededRng() * Math.PI, length: seededRng() * 10 + 5, dark: false}); }
                 }
             }
         }
@@ -1110,7 +1119,8 @@ function generateWorld(worldId) {
                 const isWater = tile === TILE_TYPE.WATER || tile === TILE_TYPE.DARK_WATER;
                 if (!isWater) {
                     const isDark = tile === TILE_TYPE.DARK_GRASS;
-                    if (seededRng() < 0.5) { worldState.decorations.push({x: worldX + seededRng() * world.gridSize, y: worldY + seededRng() * world.gridSize, angle: seededRng() * Math.PI, length: seededRng() * 10 + 5, dark: isDark}); }
+                    const decorationChance = deviceMode === 'mobile' ? 0.25 : 0.5; // 50% less grass on mobile
+                    if (seededRng() < decorationChance) { worldState.decorations.push({x: worldX + seededRng() * world.gridSize, y: worldY + seededRng() * world.gridSize, angle: seededRng() * Math.PI, length: seededRng() * 10 + 5, dark: isDark}); }
                 }
                 
                 if (worldX > buffer && worldX < world.width - buffer && worldY > buffer && worldY < world.height - buffer) {
@@ -1518,9 +1528,6 @@ function updatePlayer(deltaTime, timeScale) {
     const adjustedAcceleration = 1 - Math.pow(1 - player.acceleration, timeScale);
     player.currentSpeed += (targetSpeed - player.currentSpeed) * adjustedAcceleration;
     
-    // Apply Debug Multiplier
-    player.currentSpeed *= debugConfig.playerSpeedMult;
-
     const pCenterX = player.x + player.width/2, pCenterY = player.y + player.height/2;
     const tileX = Math.floor(pCenterX / world.gridSize);
     const tileY = Math.floor(pCenterY / world.gridSize);
@@ -2039,8 +2046,10 @@ function drawWorld() {
     
     let decorationsDrawn = 0;
     const maxDecorations = 500;
-    for(const d of worldState.decorations) {
-        if (decorationsDrawn > maxDecorations) break;
+    
+    if (settings.vegetation) {
+        for(const d of worldState.decorations) {
+            if (decorationsDrawn > maxDecorations) break;
         if (d.x > camera.x - 20 && d.x < camera.x + camera.width + 20 && d.y > camera.y - 20 && d.y < camera.y + camera.height + 20) { 
             ctx.strokeStyle = d.dark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.2)'; 
             ctx.lineWidth = 2; 
@@ -2055,6 +2064,7 @@ function drawWorld() {
             decorationsDrawn++;
         } 
     }
+    } // End settings.vegetation check
 
     if (worldState.base.x) { ctx.fillStyle = colors.base; ctx.fillRect(worldState.base.x, worldState.base.y, worldState.base.size, worldState.base.size); for(const d of worldState.baseDecorations) { ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 2; ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.angle); ctx.beginPath(); ctx.moveTo(0, -d.length/2); ctx.lineTo(0, d.length/2); ctx.stroke(); ctx.restore(); } }
     for (const obj of worldState.worldObjects) { if (obj.x > camera.x - 50 && obj.x < camera.x + camera.width + 50 && obj.y > camera.y - 50 && obj.y < camera.y + camera.height + 50) { if (obj.type === 'block') { drawCrackedBlock(obj.x, obj.y, obj.width, obj.height, colors.block, obj.cracks, obj.speckles); } else if (obj.type === 'tree') { drawTree(obj.x, obj.y, obj.size, obj.leafyDetails); } else if (obj.type === 'deadBush') { drawDeadBush(obj.x, obj.y, obj.size); } } }
@@ -2322,7 +2332,7 @@ function updateUI() {
     }
 
     // Money Update (Dirty Check)
-    const currentMoney = Math.floor(player.moneyFloat); // Check against integer for UI stability
+    const currentMoney = player.moneyFloat.toFixed(2); // Check against formatted string for precision
     if (currentMoney !== uiState.money || player.isOnCashBay) {
         moneyDisplay.classList.toggle('money-pulse', player.isOnCashBay);
         moneyDisplay.textContent = `$${formatMoney(player.moneyFloat)}`;
@@ -2399,8 +2409,10 @@ function updateWeaponStats() {
         player.bulletSpeed = (upgrade.stats['Bullet Speed'] / 100) * 12; // Convert % to base speed
         player.burstCount = upgrade.stats['Fire Rate'] > 1 ? upgrade.stats['Fire Rate'] : 1;
     } else if (player.equipment.turret === 'machineGun') {
-        player.fireRate = 125;
-        player.bulletDamage = 0.30;
+        const mgTier = player.machineGunTier || 1;
+        const mgData = garageMachineGunUpgrades[mgTier - 1];
+        player.fireRate = 1000 / mgData.stats['Fire Rate'];
+        player.bulletDamage = mgData.stats['Damage'];
         player.bulletSpeed = 16;
         player.burstCount = 1;
     }
@@ -2441,6 +2453,7 @@ function saveGame() {
             hp: player.hp,
             maxHp: player.maxHp,
             cannonTier: player.cannonTier,
+            machineGunTier: player.machineGunTier,
             engineTier: player.engineTier,
             armorTier: player.armorTier,
             blueprints: player.blueprints,
@@ -2490,6 +2503,7 @@ function loadGame() {
         player.maxHp = data.maxHp;
         player.hp = data.hp;
         player.cannonTier = data.cannonTier;
+        player.machineGunTier = data.machineGunTier || 1; // Default to 1 for old saves
         player.engineTier = data.engineTier;
         player.armorTier = data.armorTier;
         player.blueprints = data.blueprints;
@@ -2553,7 +2567,7 @@ function deleteSave() {
 // Obsolete save slot functions removed in Y1.0
 
 // R2.0: Garage UI Logic
-function getGarageTierKey(itemId) { if (itemId === 'standardCannon') return 'cannonTier'; if (itemId === 'engine') return 'engineTier'; if (itemId === 'armor') return 'armorTier'; return null; }
+function getGarageTierKey(itemId) { if (itemId === 'standardCannon') return 'cannonTier'; if (itemId === 'machineGun') return 'machineGunTier'; if (itemId === 'engine') return 'engineTier'; if (itemId === 'armor') return 'armorTier'; return null; }
 function updateGarageUI() {
     const categoryNav = document.getElementById('category-nav');
     const itemListContainer = document.getElementById('item-list');
@@ -2586,29 +2600,36 @@ function updateGarageUI() {
     const item = garageData[garageSelectedCategory].find(i => i.id === garageSelectedItemId);
     if (!item) { itemDetailsContainer.innerHTML = `<div class="text-center text-gray-500"><p class="text-lg">Select an item to see details</p></div>`; return; }
     let detailsHtml = '', currentTitle = '', currentDesc = '', currentStats = {}, maxStats = item.maxStats;
-    if (item.type === 'upgrade') {
+    
+    // Logic Swap: If MG is fabricated, treat it as an upgrade
+    const isMgUpgrade = item.id === 'machineGun' && player.fabricated.machineGun;
+    
+    if (item.type === 'upgrade' || isMgUpgrade) {
         const tierKey = getGarageTierKey(item.id);
         const currentTier = player[tierKey];
         const tierIndex = Math.max(0, currentTier - 1);
         let tierData;
+
+        let upgradesArray = item.upgrades;
+        if (isMgUpgrade) upgradesArray = garageMachineGunUpgrades;
 
         if (item.id === 'armor' && currentTier === 0) {
             currentTitle = "No Armor Plating";
             currentDesc = "Your chassis is exposed. Upgrade to add armor.";
             currentStats = { 'Block Chance': 0 };
         } else {
-            tierData = item.upgrades[tierIndex];
+            tierData = upgradesArray[tierIndex];
             currentTitle = tierData.title;
             currentDesc = tierData.description;
             currentStats = tierData.stats;
         }
 
-        const isMax = currentTier >= item.upgrades.length;
-        const nextUpgrade = isMax ? null : item.upgrades[currentTier];
-        const nextUpgradeEffectText = isMax ? 'MAX TIER' : (tierData ? tierData.nextUpgradeEffect : item.upgrades[0].description);
+        const isMax = currentTier >= upgradesArray.length;
+        const nextUpgrade = isMax ? null : upgradesArray[currentTier];
+        const nextUpgradeEffectText = isMax ? 'MAX TIER' : (tierData ? tierData.nextUpgradeEffect : upgradesArray[0].description);
 
         let equipButtonHtml = '';
-        if (item.id === 'standardCannon') { equipButtonHtml = `<button data-action="equip" data-item-id="${item.id}" class="btn w-full ${player.equipment.turret === item.id ? 'bg-green-800 text-green-300' : 'bg-blue-600 hover:bg-blue-500 text-white'}" ${player.equipment.turret === item.id ? 'disabled' : ''}>${player.equipment.turret === item.id ? 'EQUIPPED' : 'EQUIP'}</button>`; }
+        if (item.id === 'standardCannon' || item.id === 'machineGun') { equipButtonHtml = `<button data-action="equip" data-item-id="${item.id}" class="btn w-full ${player.equipment.turret === item.id ? 'bg-green-800 text-green-300' : 'bg-blue-600 hover:bg-blue-500 text-white'}" ${player.equipment.turret === item.id ? 'disabled' : ''}>${player.equipment.turret === item.id ? 'EQUIPPED' : 'EQUIP'}</button>`; }
         const upgradeButton = `<button data-action="upgrade" data-item-id="${item.id}" class="btn w-full bg-green-600 border-green-800 hover:bg-green-500 text-white py-3" ${isMax || (nextUpgrade && player.moneyFloat < nextUpgrade.cost) ? 'disabled' : ''}><span class="upgrade-btn-content"><span>${isMax ? 'MAX TIER' : `UPGRADE ($${nextUpgrade.cost.toLocaleString()})`}</span><span class="upgrade-btn-effect">${nextUpgradeEffectText}</span></span></button>`;
         detailsHtml = `<div class="grid grid-cols-1 ${equipButtonHtml ? 'md:grid-cols-2' : ''} gap-4">${upgradeButton}${equipButtonHtml}</div>`;
     } else if (item.type === 'blueprint') {
@@ -2797,7 +2818,6 @@ function setupGlobalListeners() {
             });
         }
     };
-    setupSlider('dev-player-spd', 'playerSpeedMult');
     setupSlider('dev-enemy-spd', 'enemySpeedMult');
     setupSlider('dev-bullet-spd', 'bulletSpeedMult');
 
@@ -2880,12 +2900,16 @@ function setupGlobalListeners() {
         'pc-controls-back-btn': handleBackAction,
         'garage-exit-btn': handleBackAction,
         'mobile-garage-exit-btn': handleBackAction,
-        'admin-respawn': () => { handleBackAction(); handleBackAction(); player.hp = 0; handlePlayerDeath(); },
-        'respawn-btn': () => {
+        // Old Admin Respawn (Removed/Replaced)
+        'pause-respawn-btn': () => openModal('respawn-confirm-modal'),
+        'respawn-confirm-yes': () => {
             unlockAchievement('respawn');
             isRespawning = true;
-            handleBackAction();
+            handleBackAction(); // Close confirm
+            handleBackAction(); // Close pause
         },
+        'respawn-confirm-no': handleBackAction,
+        
         'pause-options-btn': () => {
             const saveExists = localStorage.getItem(SAVE_KEY) !== null;
             document.getElementById('options-delete-world-btn').style.display = saveExists ? 'block' : 'none';
@@ -2905,6 +2929,18 @@ function setupGlobalListeners() {
         },
         'start-over-confirm-no': handleBackAction,
         'options-audio-toggle': toggleMasterAudio,
+        'options-veg-toggle': () => {
+            settings.vegetation = !settings.vegetation;
+            const onBtn = document.getElementById('veg-toggle-on');
+            const offBtn = document.getElementById('veg-toggle-off');
+            if (!settings.vegetation) {
+                onBtn.classList.remove('active');
+                offBtn.classList.add('active');
+            } else {
+                onBtn.classList.add('active');
+                offBtn.classList.remove('active');
+            }
+        }
     };
 
     for (const id in eventMappings) {
@@ -3037,7 +3073,16 @@ function setupInputs(isMobile) {
         if (action === 'equip') { if (item.id === 'nitroBoost') player.equipment.attachment = player.equipment.attachment === itemId ? null : itemId; else player.equipment.turret = itemId; success = true; } 
         else if (action === 'install') { player.carryingBlueprints = player.carryingBlueprints.filter(id => id !== itemId); delete player.blueprints[itemId]; player.installedBlueprints[itemId] = true; success = true;} 
         else if (action === 'fabricate') { const bp = item.blueprint; if (player.moneyFloat >= bp.cost) { player.moneyFloat -= bp.cost; player.fabricated[itemId] = true; if (item.id === 'nitroBoost') player.equipment.attachment = itemId; else player.equipment.turret = itemId; success = true;} } 
-        else if (action === 'upgrade') { const tierKey = getGarageTierKey(item.id); const currentTier = player[tierKey]; const nextUpgrade = item.id === 'armor' ? item.upgrades[currentTier] : item.upgrades[currentTier]; if (player.moneyFloat >= nextUpgrade.cost) { player.moneyFloat -= nextUpgrade.cost; player[tierKey]++; success = true; } }
+        else if (action === 'upgrade') { 
+            const tierKey = getGarageTierKey(item.id); 
+            const currentTier = player[tierKey]; 
+            
+            let upgradesList = item.upgrades;
+            if (item.id === 'machineGun') upgradesList = garageMachineGunUpgrades;
+            
+            const nextUpgrade = upgradesList[currentTier]; 
+            if (player.moneyFloat >= nextUpgrade.cost) { player.moneyFloat -= nextUpgrade.cost; player[tierKey]++; success = true; } 
+        }
         if (success) { playSuccessSound(); updateWeaponStats(); updatePlayerStatsFromUpgrades(); }
         updateGarageUI();
         updateUI();
@@ -3096,6 +3141,10 @@ async function startGame(isContinuing) {
         await initAudio();
         document.body.classList.add(deviceMode + '-view');
         document.body.classList.remove(deviceMode === 'mobile' ? 'desktop-view' : 'mobile-view');
+        
+        // Default Vegetation to ON, but generateWorld handles density
+        settings.vegetation = true;
+        
         setupInputs(deviceMode === 'mobile'); 
         
         const startScreen = document.getElementById('start-screen');
