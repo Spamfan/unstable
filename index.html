@@ -158,7 +158,8 @@
         .desktop-view .header-left, .desktop-view .header-right { pointer-events: auto; display: flex; align-items: center; gap: 1rem; }
         .desktop-view .header-right { background: rgba(0, 0, 0, 0.3); padding: 8px 12px; border-radius: 8px; }
         
-        canvas { display: block; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2); flex-shrink: 0; image-rendering: pixelated; transform: translateZ(0); }
+        /* Shadow removed for performance */
+        canvas { display: block; border-radius: 0.5rem; flex-shrink: 0; image-rendering: pixelated; transform: translateZ(0); }
         .mobile-view .ui-container { position: fixed; top: 10px; right: 10px; display: flex; align-items: center; gap: 1rem; background: rgba(0, 0, 0, 0.3); padding: 8px 12px; border-radius: 8px; z-index: 10; }
         
         #health-display, #money-display, #ammo-display, #blueprint-display {
@@ -440,7 +441,7 @@
     <div id="start-over-confirm-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">DELETE WORLD?</h2><p>A new game will override your previous progress in this slot.</p><div class="flex gap-4"><button id="start-over-confirm-yes" class="modal-button">YES</button><button id="start-over-confirm-no" class="modal-button confirm-button">NO</button></div></div></div>
     <div id="restart-confirm-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">RESTART GAME?</h2><p>All progress will be lost.</p><div class="flex gap-4"><button id="restart-confirm-yes" class="modal-button">YES</button><button id="restart-confirm-no" class="modal-button confirm-button">NO</button></div></div></div>
     <div id="pc-controls-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">PC CONTROLS</h2><div id="pc-controls-list" class="text-left text-lg"></div><button id="pc-controls-back-btn" class="modal-button confirm-button">BACK</button></div></div>
-    <div id="options-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">OPTIONS</h2><button id="options-achievements-btn" class="modal-button info-button">🏆 ACHIEVEMENTS</button><button id="options-controls-btn" class="modal-button info-button">CONTROLS</button><div id="options-audio-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">AUDIO:</span><span id="audio-toggle-on" class="audio-toggle-option">ON</span><span id="audio-toggle-off" class="audio-toggle-option">OFF</span></div><div id="options-veg-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">VEGETATION:</span><span id="veg-toggle-on" class="audio-toggle-option">ON</span><span id="veg-toggle-off" class="audio-toggle-option">OFF</span></div><button id="options-delete-world-btn" class="modal-button" style="margin-top: 2rem;">DELETE WORLD</button><button id="options-back-btn" class="modal-button confirm-button">BACK</button></div></div>
+    <div id="options-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">OPTIONS</h2><button id="options-achievements-btn" class="modal-button info-button">🏆 ACHIEVEMENTS</button><button id="options-controls-btn" class="modal-button info-button">CONTROLS</button><div id="options-audio-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">AUDIO:</span><span id="audio-toggle-on" class="audio-toggle-option">ON</span><span id="audio-toggle-off" class="audio-toggle-option">OFF</span></div><div id="options-graphics-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">GRAPHICS:</span><span id="graphics-toggle-high" class="audio-toggle-option">HIGH</span><span id="graphics-toggle-low" class="audio-toggle-option">LOW</span></div><button id="options-delete-world-btn" class="modal-button" style="margin-top: 2rem;">DELETE WORLD</button><button id="options-back-btn" class="modal-button confirm-button">BACK</button></div></div>
     
     <div id="garage-modal" class="modal">
         <div id="garage-ui-content" class="w-11/12 max-w-4xl h-5/6 max-h-[700px] bg-gray-800 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
@@ -485,7 +486,7 @@
         <div class="modal-content" style="max-width: 320px; flex-direction: column; gap: 1rem;">
             <h2 class="text-3xl">ADMIN TOOLS</h2>
             
-            <label class="console-toggle-container info-button"><input type="checkbox" id="toggle-console-checkbox">Enable Developer Tools</label>
+            <label id="dev-tools-toggle-btn" class="console-toggle-container info-button"><input type="checkbox" id="toggle-console-checkbox">Enable Developer Tools</label>
 
             <div class="w-full flex flex-col gap-2 mb-2">
                 <button id="admin-max-base" class="modal-button admin-button-color admin-button-large">Max out:<br>base, $, HP</button>
@@ -519,12 +520,12 @@
 
 <script>
 // --- SETUP & STATE ---
-const GAME_VERSION = "Alpha 7";
+const GAME_VERSION = "Alpha 8";
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 const gameContainer = document.getElementById('game-container');
 const TARGET_DT = 1000 / 60; // The ideal time for one frame at 60fps
 const world = { width: 4000, height: 4000, gridSize: 40, chunkSize: 16 * 40 };
-let settings = { vegetation: true };
+let settings = { highQuality: true };
 let camera = { x: 0, y: 0, width: 0, height: 0, targetX: 0, targetY: 0, shake: 0, zoom: 1.0 };
 let player, keys, touchState, sfx, playerStats, achievements;
 let worldState = { worldObjects: [], bullets: [], enemies: [], deadEnemies: [], pickups: [], terrain: [], base: {}, visitedChunks: new Set(), particles: [], decorations: [], baseDecorations: [], activeBursts: [], pings: [], deathBags: [], tileMap: [], activeFollowerCount: 0 };
@@ -777,7 +778,10 @@ function resizeCanvas() {
         canvas.style.height = `${newHeight}px`;
     }
     
-    const scale = Math.min(window.devicePixelRatio || 1, 1.5);
+    // Alpha 8: Force 1.0 scale on mobile for performance
+    let scale = Math.min(window.devicePixelRatio || 1, 1.5);
+    if (deviceMode === 'mobile') scale = 1.0;
+
     canvas.width = newWidth * scale;
     canvas.height = newHeight * scale;
     ctx.scale(scale, scale);
@@ -916,11 +920,14 @@ function drawTree(x, y, size, leafyDetails) {
         ctx.beginPath();
         ctx.arc(x + size / 2, y + size / 3, size / 2.2, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = 'rgba(0,0,0,0.2)';
-        for(const detail of leafyDetails) {
-            ctx.beginPath();
-            ctx.arc(x + size / 2 + detail.x, y + size / 3 + detail.y, detail.r, 0, Math.PI * 2);
-            ctx.fill();
+        
+        if (settings.highQuality) {
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            for(const detail of leafyDetails) {
+                ctx.beginPath();
+                ctx.arc(x + size / 2 + detail.x, y + size / 3 + detail.y, detail.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
     });
 }
@@ -945,11 +952,13 @@ function drawCrackedBlock(x, y, width, height, color, crackCoords, speckles) {
     ctx.fillStyle = color;
     ctx.fillRect(x + 2, y + 2, width - 4, height - 4);
 
-    ctx.fillStyle = 'rgba(0,0,0,0.1)';
-    for(const s of speckles) {
-        ctx.fillRect(x + s.x, y + s.y, s.size, s.size);
+    if (settings.highQuality) {
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        for(const s of speckles) {
+            ctx.fillRect(x + s.x, y + s.y, s.size, s.size);
+        }
+        if (crackCoords) { ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 2; for (const crack of crackCoords) { ctx.beginPath(); ctx.moveTo(x + crack.x1, y + crack.y1); ctx.lineTo(x + crack.x2, y + crack.y2); ctx.stroke(); } }
     }
-    if (crackCoords) { ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 2; for (const crack of crackCoords) { ctx.beginPath(); ctx.moveTo(x + crack.x1, y + crack.y1); ctx.lineTo(x + crack.x2, y + crack.y2); ctx.stroke(); } }
 }
 function drawCashBay(x, y, width, height) { ctx.fillStyle = '#166534'; ctx.fillRect(x, y, width, height); ctx.fillStyle = '#22c55e'; ctx.font = 'bold 60px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('$', x + width / 2, y + height / 2); }
 function drawCashBag(x, y, size) { ctx.fillStyle = '#166534'; ctx.beginPath(); ctx.roundRect(x, y, size, size, [8]); ctx.fill(); ctx.strokeStyle = 'black'; ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = '#fBBF24'; ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('$', x + size / 2, y + size / 2); }
@@ -2047,26 +2056,44 @@ function drawWorld() {
     let decorationsDrawn = 0;
     const maxDecorations = 500;
     
-    if (settings.vegetation) {
+    if (settings.highQuality) {
         for(const d of worldState.decorations) {
             if (decorationsDrawn > maxDecorations) break;
-        if (d.x > camera.x - 20 && d.x < camera.x + camera.width + 20 && d.y > camera.y - 20 && d.y < camera.y + camera.height + 20) { 
-            ctx.strokeStyle = d.dark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.2)'; 
-            ctx.lineWidth = 2; 
-            ctx.save(); 
-            ctx.translate(d.x, d.y); 
-            ctx.rotate(d.angle); 
-            ctx.beginPath(); 
-            ctx.moveTo(0, -d.length/2); 
-            ctx.lineTo(0, d.length/2); 
-            ctx.stroke(); 
-            ctx.restore(); 
-            decorationsDrawn++;
-        } 
+            if (d.x > camera.x - 20 && d.x < camera.x + camera.width + 20 && d.y > camera.y - 20 && d.y < camera.y + camera.height + 20) { 
+                ctx.strokeStyle = d.dark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.2)'; 
+                ctx.lineWidth = 2; 
+                ctx.save(); 
+                ctx.translate(d.x, d.y); 
+                ctx.rotate(d.angle); 
+                ctx.beginPath(); 
+                ctx.moveTo(0, -d.length/2); 
+                ctx.lineTo(0, d.length/2); 
+                ctx.stroke(); 
+                ctx.restore(); 
+                decorationsDrawn++;
+            } 
+        }
     }
-    } // End settings.vegetation check
 
-    if (worldState.base.x) { ctx.fillStyle = colors.base; ctx.fillRect(worldState.base.x, worldState.base.y, worldState.base.size, worldState.base.size); for(const d of worldState.baseDecorations) { ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 2; ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.angle); ctx.beginPath(); ctx.moveTo(0, -d.length/2); ctx.lineTo(0, d.length/2); ctx.stroke(); ctx.restore(); } }
+    if (worldState.base.x) { 
+        ctx.fillStyle = colors.base; 
+        ctx.fillRect(worldState.base.x, worldState.base.y, worldState.base.size, worldState.base.size); 
+        
+        if (settings.highQuality) {
+            for(const d of worldState.baseDecorations) { 
+                ctx.strokeStyle = 'rgba(0,0,0,0.5)'; 
+                ctx.lineWidth = 2; 
+                ctx.save(); 
+                ctx.translate(d.x, d.y); 
+                ctx.rotate(d.angle); 
+                ctx.beginPath(); 
+                ctx.moveTo(0, -d.length/2); 
+                ctx.lineTo(0, d.length/2); 
+                ctx.stroke(); 
+                ctx.restore(); 
+            }
+        }
+    }
     for (const obj of worldState.worldObjects) { if (obj.x > camera.x - 50 && obj.x < camera.x + camera.width + 50 && obj.y > camera.y - 50 && obj.y < camera.y + camera.height + 50) { if (obj.type === 'block') { drawCrackedBlock(obj.x, obj.y, obj.width, obj.height, colors.block, obj.cracks, obj.speckles); } else if (obj.type === 'tree') { drawTree(obj.x, obj.y, obj.size, obj.leafyDetails); } else if (obj.type === 'deadBush') { drawDeadBush(obj.x, obj.y, obj.size); } } }
     if(worldState.base.cashBay && worldState.base.cashBay.tier > 0) { const cb = worldState.base.cashBay; drawCashBay(cb.x, cb.y, cb.width, cb.height); }
     if(worldState.base.garage && worldState.base.garage.tier > 0) { const g = worldState.base.garage; drawGarage(g.x, g.y, g.width, g.height); }
@@ -2798,13 +2825,7 @@ function setupGlobalListeners() {
         updateAudioToggleUI();
     };
 
-    const consoleCheckbox = document.getElementById('toggle-console-checkbox');
-    if (consoleCheckbox) {
-        consoleCheckbox.addEventListener('change', (e) => {
-            isConsoleVisible = e.target.checked;
-            document.getElementById('dev-tools-panel').style.display = isConsoleVisible ? 'block' : 'none';
-        });
-    }
+    // Removed old change listener for touch compatibility fix
     
     // Dev Tool Sliders
     const setupSlider = (id, key) => {
@@ -2929,18 +2950,25 @@ function setupGlobalListeners() {
         },
         'start-over-confirm-no': handleBackAction,
         'options-audio-toggle': toggleMasterAudio,
-        'options-veg-toggle': () => {
-            settings.vegetation = !settings.vegetation;
-            const onBtn = document.getElementById('veg-toggle-on');
-            const offBtn = document.getElementById('veg-toggle-off');
-            if (!settings.vegetation) {
+        'options-graphics-toggle': () => {
+            settings.highQuality = !settings.highQuality;
+            const onBtn = document.getElementById('graphics-toggle-high');
+            const offBtn = document.getElementById('graphics-toggle-low');
+            if (!settings.highQuality) {
                 onBtn.classList.remove('active');
                 offBtn.classList.add('active');
             } else {
                 onBtn.classList.add('active');
                 offBtn.classList.remove('active');
             }
-        }
+        },
+        // Manual Toggle for Dev Tools Checkbox (Touch Fix)
+        'dev-tools-toggle-btn': () => {
+            const checkbox = document.getElementById('toggle-console-checkbox');
+            checkbox.checked = !checkbox.checked;
+            isConsoleVisible = checkbox.checked;
+            document.getElementById('dev-tools-panel').style.display = isConsoleVisible ? 'block' : 'none';
+        },
     };
 
     for (const id in eventMappings) {
@@ -3142,8 +3170,8 @@ async function startGame(isContinuing) {
         document.body.classList.add(deviceMode + '-view');
         document.body.classList.remove(deviceMode === 'mobile' ? 'desktop-view' : 'mobile-view');
         
-        // Default Vegetation to ON, but generateWorld handles density
-        settings.vegetation = true;
+        // Default to Low Quality on Mobile, High on Desktop
+        settings.highQuality = (deviceMode === 'desktop');
         
         setupInputs(deviceMode === 'mobile'); 
         
