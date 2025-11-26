@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tank Tycoon (Alpha 7)</title>
+    <title>Tank Tycoon (Alpha 9)</title>
     <!-- Tailwind Removed for Performance -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
@@ -441,7 +441,7 @@
     <div id="start-over-confirm-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">DELETE WORLD?</h2><p>A new game will override your previous progress in this slot.</p><div class="flex gap-4"><button id="start-over-confirm-yes" class="modal-button">YES</button><button id="start-over-confirm-no" class="modal-button confirm-button">NO</button></div></div></div>
     <div id="restart-confirm-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">RESTART GAME?</h2><p>All progress will be lost.</p><div class="flex gap-4"><button id="restart-confirm-yes" class="modal-button">YES</button><button id="restart-confirm-no" class="modal-button confirm-button">NO</button></div></div></div>
     <div id="pc-controls-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">PC CONTROLS</h2><div id="pc-controls-list" class="text-left text-lg"></div><button id="pc-controls-back-btn" class="modal-button confirm-button">BACK</button></div></div>
-    <div id="options-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">OPTIONS</h2><button id="options-achievements-btn" class="modal-button info-button">🏆 ACHIEVEMENTS</button><button id="options-controls-btn" class="modal-button info-button">CONTROLS</button><div id="options-audio-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">AUDIO:</span><span id="audio-toggle-on" class="audio-toggle-option">ON</span><span id="audio-toggle-off" class="audio-toggle-option">OFF</span></div><div id="options-graphics-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">GRAPHICS:</span><span id="graphics-toggle-high" class="audio-toggle-option">HIGH</span><span id="graphics-toggle-low" class="audio-toggle-option">LOW</span></div><button id="options-delete-world-btn" class="modal-button" style="margin-top: 2rem;">DELETE WORLD</button><button id="options-back-btn" class="modal-button confirm-button">BACK</button></div></div>
+    <div id="options-modal" class="modal"><div class="modal-content"><h2 class="text-3xl">OPTIONS</h2><button id="options-achievements-btn" class="modal-button info-button">🏆 ACHIEVEMENTS</button><button id="options-controls-btn" class="modal-button info-button">CONTROLS</button><div id="options-audio-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">AUDIO:</span><span id="audio-toggle-on" class="audio-toggle-option">ON</span><span id="audio-toggle-off" class="audio-toggle-option">OFF</span></div><div id="options-graphics-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">GRAPHICS:</span><span id="graphics-toggle-high" class="audio-toggle-option">HIGH</span><span id="graphics-toggle-low" class="audio-toggle-option">LOW</span></div><div id="options-res-toggle" class="audio-toggle info-button"><span class="audio-toggle-label">RES:</span><span id="res-toggle-native" class="audio-toggle-option">NATIVE</span><span id="res-toggle-retro" class="audio-toggle-option">RETRO</span></div><button id="options-delete-world-btn" class="modal-button" style="margin-top: 2rem;">DELETE WORLD</button><button id="options-back-btn" class="modal-button confirm-button">BACK</button></div></div>
     
     <div id="garage-modal" class="modal">
         <div id="garage-ui-content" class="w-11/12 max-w-4xl h-5/6 max-h-[700px] bg-gray-800 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
@@ -520,12 +520,12 @@
 
 <script>
 // --- SETUP & STATE ---
-const GAME_VERSION = "Alpha 8";
+const GAME_VERSION = "Alpha 9";
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 const gameContainer = document.getElementById('game-container');
 const TARGET_DT = 1000 / 60; // The ideal time for one frame at 60fps
 const world = { width: 4000, height: 4000, gridSize: 40, chunkSize: 16 * 40 };
-let settings = { highQuality: true };
+let settings = { highQuality: true, lowResolution: false };
 let camera = { x: 0, y: 0, width: 0, height: 0, targetX: 0, targetY: 0, shake: 0, zoom: 1.0 };
 let player, keys, touchState, sfx, playerStats, achievements;
 let worldState = { worldObjects: [], bullets: [], enemies: [], deadEnemies: [], pickups: [], terrain: [], base: {}, visitedChunks: new Set(), particles: [], decorations: [], baseDecorations: [], activeBursts: [], pings: [], deathBags: [], tileMap: [], activeFollowerCount: 0 };
@@ -781,13 +781,21 @@ function resizeCanvas() {
     // Alpha 8: Force 1.0 scale on mobile for performance
     let scale = Math.min(window.devicePixelRatio || 1, 1.5);
     if (deviceMode === 'mobile') scale = 1.0;
+    
+    // Alpha 9: Retro Mode (Cuts resolution by 3x for massive performance gain)
+    if (settings.lowResolution) {
+        scale = scale / 3;
+    }
 
     canvas.width = newWidth * scale;
     canvas.height = newHeight * scale;
     ctx.scale(scale, scale);
 
-    camera.width = newWidth / camera.zoom;
+    camera.width = newWidth / camera.zoom; // Camera view stays same size relative to world
     camera.height = newHeight / camera.zoom;
+    
+    // Fix for blurriness when scaling up retro pixels
+    ctx.imageSmoothingEnabled = false;
 }
 
 
@@ -2921,13 +2929,20 @@ function setupGlobalListeners() {
         'pc-controls-back-btn': handleBackAction,
         'garage-exit-btn': handleBackAction,
         'mobile-garage-exit-btn': handleBackAction,
-        // Old Admin Respawn (Removed/Replaced)
-        'pause-respawn-btn': () => openModal('respawn-confirm-modal'),
-        'respawn-confirm-yes': () => {
+        // Logic Repair: Re-add the Death Screen Respawn Button
+        'respawn-btn': () => {
             unlockAchievement('respawn');
             isRespawning = true;
+            handleBackAction();
+        },
+
+        // Pause Menu Suicide Logic (Proper Death Flow)
+        'pause-respawn-btn': () => openModal('respawn-confirm-modal'),
+        'respawn-confirm-yes': () => {
             handleBackAction(); // Close confirm
             handleBackAction(); // Close pause
+            player.hp = 0; // Kill player
+            handlePlayerDeath(); // Trigger standard death flow (Loot drop + Modal)
         },
         'respawn-confirm-no': handleBackAction,
         
@@ -2961,6 +2976,19 @@ function setupGlobalListeners() {
                 onBtn.classList.add('active');
                 offBtn.classList.remove('active');
             }
+        },
+        'options-res-toggle': () => {
+            settings.lowResolution = !settings.lowResolution;
+            const onBtn = document.getElementById('res-toggle-native');
+            const offBtn = document.getElementById('res-toggle-retro');
+            if (settings.lowResolution) {
+                onBtn.classList.remove('active');
+                offBtn.classList.add('active');
+            } else {
+                onBtn.classList.add('active');
+                offBtn.classList.remove('active');
+            }
+            resizeCanvas(); // Apply resolution change immediately
         },
         // Manual Toggle for Dev Tools Checkbox (Touch Fix)
         'dev-tools-toggle-btn': () => {
@@ -3172,6 +3200,8 @@ async function startGame(isContinuing) {
         
         // Default to Low Quality on Mobile, High on Desktop
         settings.highQuality = (deviceMode === 'desktop');
+        // Default Retro Mode to OFF (User can enable if lagging)
+        settings.lowResolution = false;
         
         setupInputs(deviceMode === 'mobile'); 
         
