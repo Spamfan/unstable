@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tank Tycoon (Alpha 13)</title>
+    <title>Tank Tycoon (Alpha 14)</title>
     <!-- Tailwind Removed for Performance -->
     <!-- Tone.js Removed for Performance & Privacy -->
     <style>
@@ -428,10 +428,10 @@
         <div class="dev-slider-row"><label>Bullet Spd:</label><input type="range" id="dev-bullet-spd" min="0.1" max="10.0" step="0.1" value="1.0"><span id="val-bullet-spd">1.0</span></div>
         <hr style="border-color: #444; margin: 8px 0;">
         <div class="dev-slider-row"><label>Master Vol:</label><input type="range" id="dev-master-vol" min="0.0" max="5.0" step="0.1" value="1.0"><span id="val-master-vol">1.0</span></div>
-        <div class="dev-slider-row"><label>Engine Vol:</label><input type="range" id="dev-eng-vol" min="0.0" max="5.0" step="0.1" value="1.0"><span id="val-eng-vol">1.0</span></div>
-        <div class="dev-slider-row"><label>Player Fire:</label><input type="range" id="dev-vol-pfire" min="0.0" max="5.0" step="0.1" value="0.6"><span id="val-vol-pfire">0.6</span></div>
+        <div class="dev-slider-row"><label>Engine Vol:</label><input type="range" id="dev-eng-vol" min="0.0" max="5.0" step="0.1" value="4.0"><span id="val-eng-vol">4.0</span></div>
+        <div class="dev-slider-row"><label>Player Fire:</label><input type="range" id="dev-vol-pfire" min="0.0" max="5.0" step="0.1" value="0.4"><span id="val-vol-pfire">0.4</span></div>
         <div class="dev-slider-row"><label>Enemy Fire:</label><input type="range" id="dev-vol-efire" min="0.0" max="5.0" step="0.1" value="0.4"><span id="val-vol-efire">0.4</span></div>
-        <div class="dev-slider-row"><label>Explosions:</label><input type="range" id="dev-vol-exp" min="0.0" max="5.0" step="0.1" value="0.8"><span id="val-vol-exp">0.8</span></div>
+        <div class="dev-slider-row"><label>Explosions:</label><input type="range" id="dev-vol-exp" min="0.0" max="5.0" step="0.1" value="0.3"><span id="val-vol-exp">0.3</span></div>
         <div class="dev-slider-row"><label>Ambience:</label><input type="range" id="dev-vol-amb" min="0.0" max="5.0" step="0.1" value="0.5"><span id="val-vol-amb">0.5</span></div>
         <div class="dev-slider-row"><label>UI/System:</label><input type="range" id="dev-vol-ui" min="0.0" max="5.0" step="0.1" value="0.7"><span id="val-vol-ui">0.7</span></div>
         <hr style="border-color: #444; margin: 8px 0;">
@@ -530,7 +530,7 @@
 
 <script>
 // --- SETUP & STATE ---
-const GAME_VERSION = "Alpha 13";
+const GAME_VERSION = "Alpha 14";
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 const gameContainer = document.getElementById('game-container');
 const TARGET_DT = 1000 / 60; // The ideal time for one frame at 60fps
@@ -548,16 +548,16 @@ let lastSoundPlayTimes = {};
 if (typeof debugConfig === 'undefined') {
     var debugConfig = { 
         baseSpeedMult: 1.0, enemySpeedMult: 1.0, bulletSpeedMult: 1.0, 
-        masterVol: 1.0, engineVol: 1.0, 
-        volPlayerFire: 0.6, volEnemyFire: 0.4, volExplosions: 0.8, volAmbience: 0.5, volUI: 0.7 
+        masterVol: 1.0, engineVol: 4.0, 
+        volPlayerFire: 0.4, volEnemyFire: 0.4, volExplosions: 0.3, volAmbience: 0.5, volUI: 0.7 
     };
 } else {
     // Reset defaults for new channels
     debugConfig.masterVol = 1.0;
-    debugConfig.engineVol = 1.0;
-    debugConfig.volPlayerFire = 0.6;
+    debugConfig.engineVol = 4.0;
+    debugConfig.volPlayerFire = 0.4;
     debugConfig.volEnemyFire = 0.4;
-    debugConfig.volExplosions = 0.8;
+    debugConfig.volExplosions = 0.3;
     debugConfig.volAmbience = 0.5;
     debugConfig.volUI = 0.7;
 }
@@ -2944,11 +2944,15 @@ function setupGlobalListeners() {
         if (audioCtx && audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
+        // Force Engine Kickstart for iOS if it failed to load initially
+        if (!engineSourceNode) {
+            initEngineSound();
+        }
+        
         if (e.target.closest('.modal-button, .utility-btn, .start-btn, .btn, .item-card, .category-btn')) {
             playUrlSound('uiClick');
         }
     }, { passive: false });
-
     // Fix Sticky Keys on Tab Out
     window.addEventListener('blur', () => {
         keys = { w: false, a: false, s: false, d: false, ' ': false, r: false, shift: false, arrowup: false, arrowdown: false, arrowleft: false, arrowright: false, escape: false, q: false };
@@ -3452,10 +3456,10 @@ function showStartScreen() {
 
     const optionsBtn = document.getElementById('main-menu-options-btn');
     if (optionsBtn) {
-        optionsBtn.addEventListener(eventType, async (e) => {
+        optionsBtn.addEventListener(eventType, (e) => {
             e.preventDefault();
-            await initAudio();
-            playUrlSound('uiClick'); // Use new Native Audio
+            initAudio(); // Load in background, don't await
+            playUrlSound('uiClick'); 
             const saveExistsForOptions = localStorage.getItem(SAVE_KEY) !== null;
             document.getElementById('options-delete-world-btn').style.display = saveExistsForOptions ? 'block' : 'none';
             openModal('options-modal');
