@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tank Tycoon (Alpha 9)</title>
+    <title>Tank Tycoon (Alpha 10)</title>
     <!-- Tailwind Removed for Performance -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
@@ -520,7 +520,7 @@
 
 <script>
 // --- SETUP & STATE ---
-const GAME_VERSION = "Alpha 9";
+const GAME_VERSION = "Alpha 10";
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 const gameContainer = document.getElementById('game-container');
 const TARGET_DT = 1000 / 60; // The ideal time for one frame at 60fps
@@ -626,8 +626,8 @@ const GARAGE_UNLOCK_COST = 250;
 // --- DYNAMIC ENGINE SOUND SYSTEM (NATIVE) ---
 let engineCtx, engineGain, engineSource;
 const engineAudioUrl = 'https://dl.dropboxusercontent.com/scl/fi/3vkvoeltskmfuhnuoly2m/engine_trimmed_loopable.mp3?rlkey=d844chyrjkriy4ph61cyitn04&st=ehu6kt81';
-const FADE_TIME = 0.4; const MASTER_VOLUME = 6.0; // Even Louder for Alpha 7
-const PITCH_START = 0.2; const PITCH_END = 0.85; // Capped Low: Deep rumble -> Heavy rev (No drilling)
+const FADE_TIME = 0.4; const MASTER_VOLUME = 1.0; // Reduced to 1.0 to prevent Digital Clipping (Popping)
+const PITCH_START = 0.2; const PITCH_END = 1.2; // Tuned for realistic RPM range
 
 async function initEngineSound() {
     if (engineCtx) return;
@@ -1541,10 +1541,18 @@ function updatePlayer(deltaTime, timeScale) {
 
     let speedModifier = 1.0;
     if (player.boost.isBoosting) speedModifier *= 3;
-    // This is a frame-rate independent interpolation for smooth acceleration.
-    const adjustedAcceleration = 1 - Math.pow(1 - player.acceleration, timeScale);
-    player.currentSpeed += (targetSpeed - player.currentSpeed) * adjustedAcceleration;
     
+    // Alpha 10: Linear Acceleration (Simpler/Robust on Mobile)
+    // Move towards targetSpeed by acceleration amount
+    const diff = targetSpeed - player.currentSpeed;
+    const step = player.acceleration * timeScale;
+    
+    if (Math.abs(diff) < step) {
+        player.currentSpeed = targetSpeed;
+    } else {
+        player.currentSpeed += Math.sign(diff) * step;
+    }
+
     const pCenterX = player.x + player.width/2, pCenterY = player.y + player.height/2;
     const tileX = Math.floor(pCenterX / world.gridSize);
     const tileY = Math.floor(pCenterY / world.gridSize);
@@ -2722,6 +2730,9 @@ function gameLoop(timestamp) {
         animationFrameId = requestAnimationFrame(gameLoop);
         return;
     }
+    
+    // Alpha 10: Clamp deltaTime to prevent physics explosions during lag spikes
+    const cappedDelta = Math.min(deltaTime, 50); 
 
     if (isConsoleVisible) {
         document.getElementById('console-output').textContent = `dT: ${deltaTime.toFixed(2)}ms`;
@@ -2733,20 +2744,20 @@ function gameLoop(timestamp) {
         saveGame(0); // Pass slot 0 for single save
     }
     
-    const timeScale = deltaTime / TARGET_DT;
+    const timeScale = cappedDelta / TARGET_DT;
     
     updateSpatialGrid();
 
     if (!isPlayerInGarage) {
-        updatePlayer(deltaTime, timeScale);
+        updatePlayer(cappedDelta, timeScale);
         updateShooting();
         updatePickups();
         updateCamera();
         updateEnemies(timeScale);
         updateBullets(timeScale);
         updateBursts();
-        updateBase(deltaTime);
-        updateAchievements(deltaTime);
+        updateBase(cappedDelta);
+        updateAchievements(cappedDelta);
     } else {
         camera.x += (camera.targetX - camera.x) * 0.1;
         camera.y += (camera.targetY - camera.y) * 0.1;
