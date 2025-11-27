@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tank Tycoon (Alpha 10)</title>
+    <title>Tank Tycoon (Alpha 11)</title>
     <!-- Tailwind Removed for Performance -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <!-- Tone.js Removed for Performance & Privacy -->
     <style>
         /* --- Base Styles & Baked Utilities --- */
         html, body { height: 100%; width: 100%; overflow: hidden; margin: 0; padding: 0; background-color: #2D3748; }
@@ -357,8 +357,9 @@
         }
         #dev-tools-panel {
             position: fixed;
-            bottom: 50px;
+            top: 60px; /* Moved to Top Left under Pause Button */
             left: 10px;
+            bottom: auto;
             background: rgba(0,0,0,0.8);
             color: #00FF00;
             padding: 10px;
@@ -422,11 +423,15 @@
     <div id="ping-spy-panel"></div>
     <div id="dev-tools-panel">
         <div id="console-output">Console Ready...</div>
-        <div class="dev-slider-row"><label>Enemy Spd:</label><input type="range" id="dev-enemy-spd" min="0.1" max="5.0" step="0.1" value="1.0"><span id="val-enemy-spd">1.0</span></div>
-        <div class="dev-slider-row"><label>Bullet Spd:</label><input type="range" id="dev-bullet-spd" min="0.1" max="5.0" step="0.1" value="1.0"><span id="val-bullet-spd">1.0</span></div>
+        <div class="dev-slider-row"><label>Base Spd:</label><input type="range" id="dev-base-spd" min="0.5" max="5.0" step="0.1" value="1.0"><span id="val-base-spd">1.0</span></div>
+        <div class="dev-slider-row"><label>Enemy Spd:</label><input type="range" id="dev-enemy-spd" min="0.1" max="10.0" step="0.1" value="1.0"><span id="val-enemy-spd">1.0</span></div>
+        <div class="dev-slider-row"><label>Bullet Spd:</label><input type="range" id="dev-bullet-spd" min="0.1" max="10.0" step="0.1" value="1.0"><span id="val-bullet-spd">1.0</span></div>
         <hr style="border-color: #444; margin: 8px 0;">
-        <div class="dev-slider-row"><label>MG Dmg:</label><input type="range" id="dev-mg-dmg" min="0.1" max="2.0" step="0.05" value="0.3"><span id="val-mg-dmg">0.3</span></div>
-        <div class="dev-slider-row"><label>MG Rate:</label><input type="range" id="dev-mg-rate" min="1" max="30" step="1" value="8"><span id="val-mg-rate">8</span></div>
+        <div class="dev-slider-row"><label>Engine Vol:</label><input type="range" id="dev-eng-vol" min="0.0" max="2.0" step="0.1" value="1.0"><span id="val-eng-vol">1.0</span></div>
+        <div class="dev-slider-row"><label>SFX Vol:</label><input type="range" id="dev-sfx-vol" min="0.0" max="2.0" step="0.1" value="0.6"><span id="val-sfx-vol">0.6</span></div>
+        <hr style="border-color: #444; margin: 8px 0;">
+        <div class="dev-slider-row"><label>MG Dmg:</label><input type="range" id="dev-mg-dmg" min="0.1" max="5.0" step="0.1" value="0.3"><span id="val-mg-dmg">0.3</span></div>
+        <div class="dev-slider-row"><label>MG Rate:</label><input type="range" id="dev-mg-rate" min="1" max="50" step="1" value="8"><span id="val-mg-rate">8</span></div>
     </div>
     <div id="transition-overlay"></div>
     <div id="saving-overlay" class="modal"><div class="modal-content"><h2>Saving game...</h2></div></div>
@@ -520,19 +525,32 @@
 
 <script>
 // --- SETUP & STATE ---
-const GAME_VERSION = "Alpha 10";
+const GAME_VERSION = "Alpha 11";
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 const gameContainer = document.getElementById('game-container');
 const TARGET_DT = 1000 / 60; // The ideal time for one frame at 60fps
 const world = { width: 4000, height: 4000, gridSize: 40, chunkSize: 16 * 40 };
 let settings = { highQuality: true, lowResolution: false };
 let camera = { x: 0, y: 0, width: 0, height: 0, targetX: 0, targetY: 0, shake: 0, zoom: 1.0 };
-let player, keys, touchState, sfx, playerStats, achievements;
+let player, keys, touchState, playerStats, achievements; // Removed 'sfx' global
 let worldState = { worldObjects: [], bullets: [], enemies: [], deadEnemies: [], pickups: [], terrain: [], base: {}, visitedChunks: new Set(), particles: [], decorations: [], baseDecorations: [], activeBursts: [], pings: [], deathBags: [], tileMap: [], activeFollowerCount: 0 };
 let animationFrameId, lastTime, isPaused = false, isAudioInitialized = false, isMuted = false;
 // 2.7 Performance: Sound Throttling
 const SOUND_COOLDOWN_MS = 50;
 let lastSoundPlayTimes = {};
+
+// Debug Config (Consolidated)
+// Note: If you see another 'let debugConfig' above or below this block in your code, delete it manually.
+// But this replacement should fix the main conflict.
+if (typeof debugConfig === 'undefined') {
+    var debugConfig = { baseSpeedMult: 1.0, enemySpeedMult: 1.0, bulletSpeedMult: 1.0, engineVol: 1.0, sfxVol: 0.6 };
+} else {
+    // Update existing config with new defaults if missing
+    debugConfig.baseSpeedMult = 1.0;
+    debugConfig.engineVol = 1.0;
+    debugConfig.sfxVol = 0.6;
+}
+
 // Y1.6: Centralized function to update audio toggle UI
 function updateAudioToggleUI() {
     const onBtn = document.getElementById('audio-toggle-on');
@@ -575,7 +593,7 @@ let isRespawning = false;
 let notificationQueue = [];
 let lastPingTime = 0;
 let uiState = { money: null, hp: null, ammo: null, blueprints: null };
-let debugConfig = { playerSpeedMult: 1.0, enemySpeedMult: 1.0, bulletSpeedMult: 1.0 };
+// debugConfig declaration removed (handled by consolidated block below)
 let deviceMode = 'desktop'; // 'desktop' or 'mobile'
 // W1.4 Save System State
 let currentSaveSlot = -1;
@@ -623,60 +641,47 @@ const medBayUpgrades = [
 ];
 const GARAGE_UNLOCK_COST = 250;
 
-// --- DYNAMIC ENGINE SOUND SYSTEM (NATIVE) ---
-let engineCtx, engineGain, engineSource;
-const engineAudioUrl = 'https://dl.dropboxusercontent.com/scl/fi/3vkvoeltskmfuhnuoly2m/engine_trimmed_loopable.mp3?rlkey=d844chyrjkriy4ph61cyitn04&st=ehu6kt81';
-const FADE_TIME = 0.4; const MASTER_VOLUME = 1.0; // Reduced to 1.0 to prevent Digital Clipping (Popping)
-const PITCH_START = 0.2; const PITCH_END = 1.2; // Tuned for realistic RPM range
+// --- ENGINE SOUND (Integrated with SoundManager) ---
+let engineGainNode = null;
+let engineSourceNode = null;
+const engineUrl = 'https://dl.dropboxusercontent.com/scl/fi/3vkvoeltskmfuhnuoly2m/engine_trimmed_loopable.mp3?rlkey=d844chyrjkriy4ph61cyitn04&st=ehu6kt81';
+const PITCH_START = 0.2; const PITCH_END = 0.85;
 
 async function initEngineSound() {
-    if (engineCtx) return;
+    if (!audioCtx) return;
     try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        engineCtx = new AudioContext();
-        engineGain = engineCtx.createGain();
-        engineGain.gain.value = 0;
-        engineGain.connect(engineCtx.destination);
-
-        const response = await fetch(engineAudioUrl);
-        const arrayBuffer = await response.arrayBuffer();
-        const audioBuffer = await engineCtx.decodeAudioData(arrayBuffer);
-
-        engineSource = engineCtx.createBufferSource();
-        engineSource.buffer = audioBuffer;
-        engineSource.loop = true;
-        engineSource.playbackRate.value = PITCH_START;
-        engineSource.connect(engineGain);
-        engineSource.start(0);
-        console.log("Native Engine Audio Initialized");
-    } catch (e) { console.error("Engine Sound Init Error:", e); }
+        const response = await fetch(engineUrl);
+        const buffer = await audioCtx.decodeAudioData(await response.arrayBuffer());
+        
+        engineGainNode = audioCtx.createGain();
+        engineGainNode.gain.value = 0;
+        engineGainNode.connect(audioCtx.destination);
+        
+        engineSourceNode = audioCtx.createBufferSource();
+        engineSourceNode.buffer = buffer;
+        engineSourceNode.loop = true;
+        engineSourceNode.connect(engineGainNode);
+        engineSourceNode.start(0);
+    } catch(e) { console.error("Engine Init Failed", e); }
 }
 
 function updateEngineSound(deltaTime) {
-    if (!engineCtx || !engineSource || !engineGain || !player) return;
+    if (!engineGainNode || !engineSourceNode || !player) return;
     
     const isTryingToMove = (touchState.moveStick.x !== 0 || touchState.moveStick.y !== 0) || keys.w || keys.a || keys.s || keys.d;
-    const targetVolume = isTryingToMove ? MASTER_VOLUME : 0.0;
-    const now = engineCtx.currentTime;
+    const targetVolume = isTryingToMove ? debugConfig.engineVol : 0.0;
+    const now = audioCtx.currentTime;
     
-    // Smooth volume fade
-    engineGain.gain.setTargetAtTime(targetVolume, now, FADE_TIME);
+    engineGainNode.gain.setTargetAtTime(targetVolume, now, 0.4); // Fade time
 
-    // Calculate Pitch
     const speedRatio = Math.min(1, Math.abs(player.currentSpeed) / 2.0);
     let targetPitch = PITCH_START + (PITCH_END - PITCH_START) * speedRatio;
-    if (isTryingToMove && speedRatio < 0.1) { targetPitch = PITCH_START; }
-    targetPitch *= player.pitchPenalty;
-
-    // Direct value assignment (Native works best with this for continuous updates)
-    engineSource.playbackRate.value = targetPitch;
-
+    if (isTryingToMove && speedRatio < 0.1) targetPitch = PITCH_START;
+    
+    engineSourceNode.playbackRate.value = targetPitch;
+    
     if (isConsoleVisible) {
         document.getElementById('console-output').textContent = `RPM: ${targetPitch.toFixed(2)} | dT: ${deltaTime.toFixed(2)}ms`;
-    }
-
-    if (player.pitchPenalty < 1) {
-        player.pitchPenalty = Math.min(1, player.pitchPenalty + (deltaTime / 300));
     }
 }
 
@@ -799,121 +804,179 @@ function resizeCanvas() {
 }
 
 
-// --- AUDIO ---
+// --- NATIVE AUDIO SYSTEM (ALPHA 11) ---
+const soundUrls = {
+    reload: "https://raw.githubusercontent.com/Spamfan/Audio-host/main/reload.mp3",
+    shoot: "https://raw.githubusercontent.com/Spamfan/Audio-host/main/Bravo_cannon1.mp3",
+    hit: "https://raw.githubusercontent.com/Spamfan/Audio-host/main/Impact1.mp3",
+    explode: "https://raw.githubusercontent.com/Spamfan/Audio-host/main/Impact4.mp3",
+    block: "https://raw.githubusercontent.com/Spamfan/Audio-host/main/shield1.mp3",
+    ping: "https://raw.githubusercontent.com/Spamfan/Audio-host/main/radar.mp3",
+    nitro: "https://raw.githubusercontent.com/Spamfan/Audio-host/main/Nitro1sec.mp3",
+    overworldAmbience: "https://raw.githubusercontent.com/Spamfan/Audio-host/main/birds.mp3",
+    wastelandAmbience: "https://raw.githubusercontent.com/Spamfan/Audio-host/main/Wind.mp3",
+    uiClick: "https://raw.githubusercontent.com/Spamfan/Audio-host/main/UIsoft.mp3"
+};
+
+let audioCtx;
+let audioBuffers = {};
+let activeAmbienceNode = null;
+let activeAmbienceType = null;
+
 async function initAudio() {
     if (isAudioInitialized) return;
     try {
-        await Tone.start();
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        
+        // Load all samples
+        const loadPromises = Object.entries(soundUrls).map(async ([key, url]) => {
+            try {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                audioBuffers[key] = await audioCtx.decodeAudioData(arrayBuffer);
+            } catch (e) { console.error(`Failed to load ${key}`, e); }
+        });
+        
+        await Promise.all(loadPromises);
+        console.log("All audio buffers loaded.");
+        
+        await initEngineSound(); // Initialize the engine sound loop
         isAudioInitialized = true;
-        const ambienceChannel = new Tone.Channel().toDestination();
-	sfx = { 
-            reload: new Tone.Player("https://raw.githubusercontent.com/Spamfan/Audio-host/main/reload.mp3").toDestination(),
-            shoot: new Tone.Player("https://raw.githubusercontent.com/Spamfan/Audio-host/main/Bravo_cannon1.mp3").toDestination(), 
-            hit: new Tone.Player("https://raw.githubusercontent.com/Spamfan/Audio-host/main/Impact1.mp3").toDestination(), 
-            explode: new Tone.Player("https://raw.githubusercontent.com/Spamfan/Audio-host/main/Impact4.mp3").toDestination(), 
-            pickup: new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.2 } }).toDestination(), 
-            hurt: new Tone.Synth({ oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.1 } }).toDestination(), 
-            splash: new Tone.NoiseSynth({ noise: { type: 'brown' }, filter: { type: 'lowpass', frequency: 400 }, envelope: { attack: 0.05, decay: 0.4, sustain: 0 } }).toDestination(), 
-            woodBreak: new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.01, decay: 0.15, sustain: 0 } }).toDestination(), 
-            rockCrack: new Tone.MembraneSynth({ pitchDecay: 0.1, octaves: 2, envelope: { attack: 0.001, decay: 0.2, sustain: 0.01, release: 0.1 } }).toDestination(), 
-            lowHealth: new Tone.Synth({ oscillator: { type: "triangle" }, envelope: { attack: 0.2, decay: 0.5, sustain: 0.1, release: 0.5 } }).toDestination(), 
-            block: new Tone.Player("https://raw.githubusercontent.com/Spamfan/Audio-host/main/shield1.mp3").toDestination(),
-            ping: new Tone.Player("https://raw.githubusercontent.com/Spamfan/Audio-host/main/radar.mp3").toDestination(),
-            overworldAmbience: new Tone.Player("https://raw.githubusercontent.com/Spamfan/Audio-host/main/birds.mp3").connect(ambienceChannel),
-            wastelandAmbience: new Tone.Player("https://raw.githubusercontent.com/Spamfan/Audio-host/main/Wind.mp3").connect(ambienceChannel),
-            uiClick: new Tone.Player("https://raw.githubusercontent.com/Spamfan/Audio-host/main/UIsoft.mp3").toDestination(),
-            success: new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination(),
-            // X1.3: Use correct, direct-download link for Nitro
-            nitro: new Tone.Player("https://raw.githubusercontent.com/Spamfan/Audio-host/main/Nitro1sec.mp3").toDestination()
-        }; 
-        sfx.shoot.volume.value = -8; sfx.hit.volume.value = -6; sfx.explode.volume.value = -4; sfx.pickup.volume.value -= 6; sfx.hurt.volume.value -= 6; sfx.splash.volume.value -= 6; sfx.woodBreak.volume.value -= 6; sfx.rockCrack.volume.value -= 6; sfx.lowHealth.volume.value = 0; sfx.block.volume.value = -6; sfx.ping.volume.value = -10; sfx.overworldAmbience.volume.value = -6; sfx.overworldAmbience.loop = true; sfx.wastelandAmbience.volume.value = -4; sfx.wastelandAmbience.loop = true; sfx.uiClick.volume.value = -6; sfx.success.volume.value = -10; sfx.reload.volume.value = -5; 
-        sfx.nitro.volume.value = 10; // Set nitro volume
-        console.log("SFX Audio initialized. Pre-loading...");
-        await Tone.loaded();
-        await initEngineSound();
-        console.log("Audio pre-loading complete.");
-    } catch (e) { console.error("Could not start audio context:", e); } 
+    } catch (e) { console.error("Audio Init Error:", e); }
 }
-function playSound(soundName, ...args) { 
-    if (!isAudioInitialized || Tone.getDestination().mute) return; 
 
-    // 2.8 Sound Throttling for Synths
-    const now = Date.now();
-    // 'hurt' is the primary cause of the crash. 'pickup' can also be spammed.
-    const throttledSounds = ['hurt', 'pickup'];
-    if (throttledSounds.includes(soundName)) {
-        const lastPlayed = lastSoundPlayTimes[soundName] || 0;
-        if (now - lastPlayed < SOUND_COOLDOWN_MS) {
-            return; // Cooldown active, skip playing
-        }
-        lastSoundPlayTimes[soundName] = now;
-    }
-
-    const sound = sfx[soundName];
-    if (sound && typeof sound.triggerAttackRelease === 'function') {
-        sound.triggerAttackRelease(...args);
-    }
-}
-function playSuccessSound() { if (!isAudioInitialized) return; const now = Tone.now(); sfx.success.triggerAttackRelease("G5", "8n", now); sfx.success.triggerAttackRelease("C6", "8n", now + 0.1); }
-function playUrlSound(soundName, ownerType = 'player', playbackRate = 1.0) {
-    if (!isAudioInitialized || Tone.getDestination().mute || !sfx[soundName] || !sfx[soundName].loaded) return;
-
-    // 2.7 Sound Throttling Logic
-    const now = Date.now();
-    const throttledSounds = ['hit', 'block']; // Sounds that can spam and cause crashes
-    if (throttledSounds.includes(soundName)) {
-        const lastPlayed = lastSoundPlayTimes[soundName] || 0;
-        if (now - lastPlayed < SOUND_COOLDOWN_MS) {
-            return; // Cooldown active, so we skip playing the sound
-        }
-        lastSoundPlayTimes[soundName] = now;
-    }
-
-    const sound = sfx[soundName];
-
-    let finalRate = playbackRate;
-    if (ownerType === 'juggernaut') {
-        finalRate *= 1.2;
-    } else if (soundName === 'hit' || soundName === 'explode') {
-        finalRate *= 0.8;
-    }
+// Helper to create and play a buffer source
+function playUrlSound(name, ownerType = 'player', rate = 1.0) {
+    if (!isAudioInitialized || isMuted || !audioBuffers[name]) return;
     
-    if (soundName === 'ping') {
-        sound.playbackRate = finalRate;
+    // Throttling
+    const now = Date.now();
+    if (['hit', 'block', 'hurt', 'pickup'].includes(name)) {
+        if (now - (lastSoundPlayTimes[name] || 0) < SOUND_COOLDOWN_MS) return;
+        lastSoundPlayTimes[name] = now;
+    }
+
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBuffers[name];
+    
+    const gainNode = audioCtx.createGain();
+    
+    // Dynamic Volume Mixing
+    let vol = debugConfig.sfxVol;
+    if (name === 'shoot' && ownerType !== 'player') vol *= 0.5; // Quieter enemy shots
+    if (name === 'hit' || name === 'explode') vol *= 0.8;
+    
+    gainNode.gain.value = vol;
+    
+    // Pitch Variation
+    if (name !== 'ping') {
+        source.playbackRate.value = rate + (Math.random() * 0.2 - 0.1);
     } else {
-        sound.playbackRate = finalRate + (Math.random() - 0.5) * 0.2;
+        source.playbackRate.value = rate;
     }
-    
-    const originalVolume = sound.volume.value;
-    if (soundName === 'shoot' && ownerType !== 'player') {
-        sound.volume.value = -10;
-    }
-    
-    if (sound.state === 'started') {
-        sound.stop();
-    }
-    sound.start();
 
-    // Reset volume if it was changed
-    if (soundName === 'shoot' && ownerType !== 'player') {
-        sound.volume.value = originalVolume;
+    source.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    source.start(0);
+}
+
+// Synth Generator (Beeps/Boops)
+function playSound(type) {
+    if (!isAudioInitialized || isMuted) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    const vol = debugConfig.sfxVol;
+
+    if (type === 'pickup') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        gain.gain.setValueAtTime(vol * 0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+    } else if (type === 'hurt') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(110, now); // A2
+        gain.gain.setValueAtTime(vol * 0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    } else if (type === 'splash') {
+        // Simple noise approximation or low tone
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(100, now);
+        gain.gain.setValueAtTime(vol * 0.3, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.4);
+        osc.start(now);
+        osc.stop(now + 0.4);
+    } else if (type === 'lowHealth') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(220, now);
+        gain.gain.setValueAtTime(vol * 0.8, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.5);
+        osc.start(now);
+        osc.stop(now + 0.5);
     }
 }
+
+function playSuccessSound() {
+    if (!isAudioInitialized || isMuted) return;
+    const now = audioCtx.currentTime;
+    const vol = debugConfig.sfxVol;
+    
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(783.99, now); // G5
+    osc.frequency.setValueAtTime(1046.50, now + 0.1); // C6
+    
+    gain.gain.setValueAtTime(vol * 0.5, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.4);
+    
+    osc.start(now);
+    osc.stop(now + 0.4);
+}
+
 function manageAmbience() {
-    if (!isAudioInitialized || !sfx.overworldAmbience.loaded || !sfx.wastelandAmbience.loaded) return;
+    if (!isAudioInitialized) return;
     
     const shouldPlayOverworld = !isPaused && !isPlayerInGarage && currentWorldId === 0;
     const shouldPlayWasteland = !isPaused && !isPlayerInGarage && (currentWorldId === 1 || currentWorldId === 2);
-
-    if (shouldPlayOverworld && sfx.overworldAmbience.state !== 'started') {
-        sfx.wastelandAmbience.stop();
-        sfx.overworldAmbience.start();
-    } else if (shouldPlayWasteland && sfx.wastelandAmbience.state !== 'started') {
-        sfx.overworldAmbience.stop();
-        sfx.wastelandAmbience.start();
-    } else if (!shouldPlayOverworld && !shouldPlayWasteland) {
-        if (sfx.overworldAmbience.state === 'started') sfx.overworldAmbience.stop();
-        if (sfx.wastelandAmbience.state === 'started') sfx.wastelandAmbience.stop();
+    
+    let targetType = null;
+    if (shouldPlayOverworld) targetType = 'overworldAmbience';
+    else if (shouldPlayWasteland) targetType = 'wastelandAmbience';
+    
+    if (targetType !== activeAmbienceType) {
+        // Stop old
+        if (activeAmbienceNode) {
+            try { activeAmbienceNode.stop(); } catch(e){}
+            activeAmbienceNode = null;
+        }
+        
+        // Start new
+        if (targetType && audioBuffers[targetType]) {
+            activeAmbienceNode = audioCtx.createBufferSource();
+            activeAmbienceNode.buffer = audioBuffers[targetType];
+            activeAmbienceNode.loop = true;
+            const gain = audioCtx.createGain();
+            gain.gain.value = debugConfig.sfxVol * 0.5;
+            activeAmbienceNode.connect(gain);
+            gain.connect(audioCtx.destination);
+            activeAmbienceNode.start(0);
+            activeAmbienceType = targetType;
+        } else {
+            activeAmbienceType = null;
+        }
     }
 }
 // --- DRAWING & AESTHETICS ---
@@ -1542,6 +1605,9 @@ function updatePlayer(deltaTime, timeScale) {
     let speedModifier = 1.0;
     if (player.boost.isBoosting) speedModifier *= 3;
     
+    // Apply Debug Base Speed Multiplier
+    targetSpeed *= debugConfig.baseSpeedMult;
+
     // Alpha 10: Linear Acceleration (Simpler/Robust on Mobile)
     // Move towards targetSpeed by acceleration amount
     const diff = targetSpeed - player.currentSpeed;
@@ -2824,23 +2890,33 @@ function setupGlobalListeners() {
     const addSafeEventListener = (elementId, handler, event = eventType) => { const element = document.getElementById(elementId); if (element) element.addEventListener(event, (e) => { e.preventDefault(); handler(e); }, { passive: false }); };
 
     document.body.addEventListener(eventType, (e) => {
-        // Resume Native Engine Context on first interaction (iOS requirement)
-        if (engineCtx && engineCtx.state === 'suspended') {
-            engineCtx.resume();
+        // Resume Audio Context on first interaction
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
         }
-        
         if (e.target.closest('.modal-button, .utility-btn, .start-btn, .btn, .item-card, .category-btn')) {
-            if (sfx && sfx.uiClick && sfx.uiClick.loaded) {
-                if (sfx.uiClick.state === "started") sfx.uiClick.stop();
-                sfx.uiClick.start();
-            }
+            playUrlSound('uiClick');
         }
     }, { passive: false });
 
+    // Fix Sticky Keys on Tab Out
+    window.addEventListener('blur', () => {
+        keys = { w: false, a: false, s: false, d: false, ' ': false, r: false, shift: false, arrowup: false, arrowdown: false, arrowleft: false, arrowright: false, escape: false, q: false };
+    });
+    
+    // Resume Audio on Tab In (iOS fix)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && audioCtx && !isMuted) {
+            audioCtx.resume();
+        }
+    });
+
     const toggleMasterAudio = () => {
-        if (!isAudioInitialized) return;
         isMuted = !isMuted;
-        Tone.getDestination().mute = isMuted;
+        if (audioCtx) {
+            if (isMuted) audioCtx.suspend();
+            else audioCtx.resume();
+        }
         updateAudioToggleUI();
     };
 
@@ -2858,8 +2934,11 @@ function setupGlobalListeners() {
             });
         }
     };
+    setupSlider('dev-base-spd', 'baseSpeedMult');
     setupSlider('dev-enemy-spd', 'enemySpeedMult');
     setupSlider('dev-bullet-spd', 'bulletSpeedMult');
+    setupSlider('dev-eng-vol', 'engineVol');
+    setupSlider('dev-sfx-vol', 'sfxVol');
 
     // MG Tuning Logic
     const mgDmgSlider = document.getElementById('dev-mg-dmg');
@@ -3229,8 +3308,26 @@ async function startGame(isContinuing) {
     }, 100); 
 }
 
+function updateGraphicsToggleUI() {
+    // Sync Graphics Toggle
+    const gfxHigh = document.getElementById('graphics-toggle-high');
+    const gfxLow = document.getElementById('graphics-toggle-low');
+    if (gfxHigh && gfxLow) {
+        if (settings.highQuality) { gfxHigh.classList.add('active'); gfxLow.classList.remove('active'); }
+        else { gfxHigh.classList.remove('active'); gfxLow.classList.add('active'); }
+    }
+    // Sync Res Toggle
+    const resNative = document.getElementById('res-toggle-native');
+    const resRetro = document.getElementById('res-toggle-retro');
+    if (resNative && resRetro) {
+        if (!settings.lowResolution) { resNative.classList.add('active'); resRetro.classList.remove('active'); }
+        else { resNative.classList.remove('active'); resRetro.classList.add('active'); }
+    }
+}
+
 function showStartScreen() {
     setupGlobalListeners();
+    updateGraphicsToggleUI();
     const container = document.getElementById('start-button-container');
     const saveExists = localStorage.getItem(SAVE_KEY) !== null;
 
@@ -3274,10 +3371,7 @@ function showStartScreen() {
         optionsBtn.addEventListener(eventType, async (e) => {
             e.preventDefault();
             await initAudio();
-            if (sfx && sfx.uiClick && sfx.uiClick.loaded) {
-                if (sfx.uiClick.state === "started") sfx.uiClick.stop();
-                sfx.uiClick.start();
-            }
+            playUrlSound('uiClick'); // Use new Native Audio
             const saveExistsForOptions = localStorage.getItem(SAVE_KEY) !== null;
             document.getElementById('options-delete-world-btn').style.display = saveExistsForOptions ? 'block' : 'none';
             openModal('options-modal');
