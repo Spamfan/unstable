@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tank Tycoon (Alpha 11)</title>
+    <title>Tank Tycoon (Alpha 13)</title>
     <!-- Tailwind Removed for Performance -->
     <!-- Tone.js Removed for Performance & Privacy -->
     <style>
@@ -423,12 +423,17 @@
     <div id="ping-spy-panel"></div>
     <div id="dev-tools-panel">
         <div id="console-output">Console Ready...</div>
-        <div class="dev-slider-row"><label>Base Spd:</label><input type="range" id="dev-base-spd" min="0.5" max="5.0" step="0.1" value="1.0"><span id="val-base-spd">1.0</span></div>
+        <div class="dev-slider-row"><label>Base Spd:</label><input type="range" id="dev-base-spd" min="0.5" max="10.0" step="0.1" value="1.0"><span id="val-base-spd">1.0</span></div>
         <div class="dev-slider-row"><label>Enemy Spd:</label><input type="range" id="dev-enemy-spd" min="0.1" max="10.0" step="0.1" value="1.0"><span id="val-enemy-spd">1.0</span></div>
         <div class="dev-slider-row"><label>Bullet Spd:</label><input type="range" id="dev-bullet-spd" min="0.1" max="10.0" step="0.1" value="1.0"><span id="val-bullet-spd">1.0</span></div>
         <hr style="border-color: #444; margin: 8px 0;">
-        <div class="dev-slider-row"><label>Engine Vol:</label><input type="range" id="dev-eng-vol" min="0.0" max="2.0" step="0.1" value="1.0"><span id="val-eng-vol">1.0</span></div>
-        <div class="dev-slider-row"><label>SFX Vol:</label><input type="range" id="dev-sfx-vol" min="0.0" max="2.0" step="0.1" value="0.6"><span id="val-sfx-vol">0.6</span></div>
+        <div class="dev-slider-row"><label>Master Vol:</label><input type="range" id="dev-master-vol" min="0.0" max="5.0" step="0.1" value="1.0"><span id="val-master-vol">1.0</span></div>
+        <div class="dev-slider-row"><label>Engine Vol:</label><input type="range" id="dev-eng-vol" min="0.0" max="5.0" step="0.1" value="1.0"><span id="val-eng-vol">1.0</span></div>
+        <div class="dev-slider-row"><label>Player Fire:</label><input type="range" id="dev-vol-pfire" min="0.0" max="5.0" step="0.1" value="0.6"><span id="val-vol-pfire">0.6</span></div>
+        <div class="dev-slider-row"><label>Enemy Fire:</label><input type="range" id="dev-vol-efire" min="0.0" max="5.0" step="0.1" value="0.4"><span id="val-vol-efire">0.4</span></div>
+        <div class="dev-slider-row"><label>Explosions:</label><input type="range" id="dev-vol-exp" min="0.0" max="5.0" step="0.1" value="0.8"><span id="val-vol-exp">0.8</span></div>
+        <div class="dev-slider-row"><label>Ambience:</label><input type="range" id="dev-vol-amb" min="0.0" max="5.0" step="0.1" value="0.5"><span id="val-vol-amb">0.5</span></div>
+        <div class="dev-slider-row"><label>UI/System:</label><input type="range" id="dev-vol-ui" min="0.0" max="5.0" step="0.1" value="0.7"><span id="val-vol-ui">0.7</span></div>
         <hr style="border-color: #444; margin: 8px 0;">
         <div class="dev-slider-row"><label>MG Dmg:</label><input type="range" id="dev-mg-dmg" min="0.1" max="5.0" step="0.1" value="0.3"><span id="val-mg-dmg">0.3</span></div>
         <div class="dev-slider-row"><label>MG Rate:</label><input type="range" id="dev-mg-rate" min="1" max="50" step="1" value="8"><span id="val-mg-rate">8</span></div>
@@ -525,7 +530,7 @@
 
 <script>
 // --- SETUP & STATE ---
-const GAME_VERSION = "Alpha 11";
+const GAME_VERSION = "Alpha 13";
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 const gameContainer = document.getElementById('game-container');
 const TARGET_DT = 1000 / 60; // The ideal time for one frame at 60fps
@@ -540,15 +545,21 @@ const SOUND_COOLDOWN_MS = 50;
 let lastSoundPlayTimes = {};
 
 // Debug Config (Consolidated)
-// Note: If you see another 'let debugConfig' above or below this block in your code, delete it manually.
-// But this replacement should fix the main conflict.
 if (typeof debugConfig === 'undefined') {
-    var debugConfig = { baseSpeedMult: 1.0, enemySpeedMult: 1.0, bulletSpeedMult: 1.0, engineVol: 1.0, sfxVol: 0.6 };
+    var debugConfig = { 
+        baseSpeedMult: 1.0, enemySpeedMult: 1.0, bulletSpeedMult: 1.0, 
+        masterVol: 1.0, engineVol: 1.0, 
+        volPlayerFire: 0.6, volEnemyFire: 0.4, volExplosions: 0.8, volAmbience: 0.5, volUI: 0.7 
+    };
 } else {
-    // Update existing config with new defaults if missing
-    debugConfig.baseSpeedMult = 1.0;
+    // Reset defaults for new channels
+    debugConfig.masterVol = 1.0;
     debugConfig.engineVol = 1.0;
-    debugConfig.sfxVol = 0.6;
+    debugConfig.volPlayerFire = 0.6;
+    debugConfig.volEnemyFire = 0.4;
+    debugConfig.volExplosions = 0.8;
+    debugConfig.volAmbience = 0.5;
+    debugConfig.volUI = 0.7;
 }
 
 // Y1.6: Centralized function to update audio toggle UI
@@ -655,7 +666,7 @@ async function initEngineSound() {
         
         engineGainNode = audioCtx.createGain();
         engineGainNode.gain.value = 0;
-        engineGainNode.connect(audioCtx.destination);
+        engineGainNode.connect(masterGainNode); // Connect to Master
         
         engineSourceNode = audioCtx.createBufferSource();
         engineSourceNode.buffer = buffer;
@@ -819,6 +830,7 @@ const soundUrls = {
 };
 
 let audioCtx;
+let masterGainNode; // New Master Volume Node
 let audioBuffers = {};
 let activeAmbienceNode = null;
 let activeAmbienceType = null;
@@ -828,6 +840,11 @@ async function initAudio() {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
+        
+        // Create Master Gain
+        masterGainNode = audioCtx.createGain();
+        masterGainNode.gain.value = debugConfig.masterVol;
+        masterGainNode.connect(audioCtx.destination);
         
         // Load all samples
         const loadPromises = Object.entries(soundUrls).map(async ([key, url]) => {
@@ -862,10 +879,15 @@ function playUrlSound(name, ownerType = 'player', rate = 1.0) {
     
     const gainNode = audioCtx.createGain();
     
-    // Dynamic Volume Mixing
-    let vol = debugConfig.sfxVol;
-    if (name === 'shoot' && ownerType !== 'player') vol *= 0.5; // Quieter enemy shots
-    if (name === 'hit' || name === 'explode') vol *= 0.8;
+    // Dynamic Volume Mixing (Channel Routing)
+    let vol = 0.5;
+    if (name === 'shoot') {
+        vol = (ownerType === 'player') ? debugConfig.volPlayerFire : debugConfig.volEnemyFire;
+    } else if (name === 'hit' || name === 'explode' || name === 'block') {
+        vol = debugConfig.volExplosions;
+    } else if (name === 'uiClick' || name === 'nitro' || name === 'ping') {
+        vol = debugConfig.volUI;
+    }
     
     gainNode.gain.value = vol;
     
@@ -877,7 +899,7 @@ function playUrlSound(name, ownerType = 'player', rate = 1.0) {
     }
 
     source.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+    gainNode.connect(masterGainNode); // Connect to Master
     source.start(0);
 }
 
@@ -889,9 +911,10 @@ function playSound(type) {
     const gain = audioCtx.createGain();
     
     osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    gain.connect(masterGainNode); // Connect to Master
     
-    const vol = debugConfig.sfxVol;
+    let vol = debugConfig.volUI; // Default to UI
+    if (type === 'splash') vol = debugConfig.volAmbience;
 
     if (type === 'pickup') {
         osc.type = 'sine';
@@ -928,7 +951,7 @@ function playSound(type) {
 function playSuccessSound() {
     if (!isAudioInitialized || isMuted) return;
     const now = audioCtx.currentTime;
-    const vol = debugConfig.sfxVol;
+    const vol = debugConfig.volUI;
     
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -969,9 +992,11 @@ function manageAmbience() {
             activeAmbienceNode.buffer = audioBuffers[targetType];
             activeAmbienceNode.loop = true;
             const gain = audioCtx.createGain();
-            gain.gain.value = debugConfig.sfxVol * 0.5;
+            gain.gain.value = debugConfig.volAmbience;
             activeAmbienceNode.connect(gain);
-            gain.connect(audioCtx.destination);
+            gain.connect(masterGainNode); // Connect to Master
+            // Store gain node reference to allow real-time slider updates
+            activeAmbienceNode._gainNode = gain;
             activeAmbienceNode.start(0);
             activeAmbienceType = targetType;
         } else {
@@ -1609,9 +1634,9 @@ function updatePlayer(deltaTime, timeScale) {
     targetSpeed *= debugConfig.baseSpeedMult;
 
     // Alpha 10: Linear Acceleration (Simpler/Robust on Mobile)
-    // Move towards targetSpeed by acceleration amount
+    // Alpha 12: Dynamic Friction (Scale braking power with speed multiplier to prevent drift)
     const diff = targetSpeed - player.currentSpeed;
-    const step = player.acceleration * timeScale;
+    const step = player.acceleration * timeScale * debugConfig.baseSpeedMult;
     
     if (Math.abs(diff) < step) {
         player.currentSpeed = targetSpeed;
@@ -1811,11 +1836,15 @@ function dropLoot(x, y, enemyType) {
             worldState.pickups.push({type:'blueprint', id: 'nitroBoost', x: validPos.x, y: validPos.y, size: 30, worldId: currentWorldId});
             return;
         } else {
-            const lootOptions = [
-                {type: 'money', value: 500}, {type: 'money', value: 2000},
-                {type: 'money', value: 2500}, {type: 'blueHeart'}
-            ];
-            const loot = lootOptions[Math.floor(Math.random() * lootOptions.length)];
+            // Alpha 12: High-Value Loot Table
+            const r = Math.random();
+            let loot;
+            if (r < 0.30) loot = {type: 'money', value: 2500};
+            else if (r < 0.70) loot = {type: 'money', value: 5000};
+            else if (r < 0.90) loot = {type: 'money', value: 10000};
+            else if (r < 0.95) loot = {type: 'money', value: 25000};
+            else loot = {type: 'blueHeart'};
+
             if (loot.type === 'money') {
                 const validPos = findValidSpawnPoint(x, y, 24, 16);
                 worldState.pickups.push({type:'money', value: loot.value, x: validPos.x, y: validPos.y, radius: 10, worldId: currentWorldId});
@@ -1825,6 +1854,27 @@ function dropLoot(x, y, enemyType) {
             }
             return;
         }
+    }
+
+    // Alpha 12: SET Loot Table
+    if (enemyType === 'superElite') {
+        const r = Math.random();
+        let loot;
+        if (r < 0.25) loot = {type: 'money', value: 2500};
+        else if (r < 0.70) loot = {type: 'money', value: 5000};
+        else if (r < 0.80) loot = {type: 'money', value: 10000};
+        else if (r < 0.90) loot = {type: 'money', value: 25000};
+        else if (r < 0.95) loot = {type: 'money', value: 50000};
+        else loot = {type: 'blueHeart'};
+
+        if (loot.type === 'money') {
+            const validPos = findValidSpawnPoint(x, y, 24, 16);
+            worldState.pickups.push({type:'money', value: loot.value, x: validPos.x, y: validPos.y, radius: 10, worldId: currentWorldId});
+        } else { 
+            const validPos = findValidSpawnPoint(x, y, 35, 35);
+            worldState.pickups.push({type:'blueHeart', x: validPos.x, y: validPos.y, radius: 18, worldId: currentWorldId});
+        }
+        return;
     }
 
     const rand = Math.random(); let loot; if (enemyType === 'elite') { if (rand < 0.33) loot = {type:'money', value: 50 }; else if (rand < 0.66) loot = {type:'money', value: 100 }; else loot = {type:'money', value: 500 }; } else { if (rand < 0.25) loot = {type:'money', value: 5 }; else if (rand < 0.5) loot = {type:'money', value: 10 }; else if (rand < 0.75) loot = {type:'money', value: 25 }; else loot = {type:'heart', count: 1 }; } if (loot.type === 'heart') { for (let i = 0; i < loot.count; i++) { const validPos = findValidSpawnPoint(x + (i * 20 - 10), y, 30, 30); worldState.pickups.push({type:'heart', x: validPos.x, y: validPos.y, radius: 15, worldId: currentWorldId}); } } else { const validPos = findValidSpawnPoint(x, y, 24, 16); worldState.pickups.push({type:'money', value: loot.value, x: validPos.x, y: validPos.y, radius: 10, worldId: currentWorldId}); } }
@@ -2908,6 +2958,10 @@ function setupGlobalListeners() {
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && audioCtx && !isMuted) {
             audioCtx.resume();
+            // Restart engine if it died
+            if (isEngineSoundReady && (!engineSourceNode || engineSourceNode.buffer === null)) {
+                initEngineSound();
+            }
         }
     });
 
@@ -2938,7 +2992,37 @@ function setupGlobalListeners() {
     setupSlider('dev-enemy-spd', 'enemySpeedMult');
     setupSlider('dev-bullet-spd', 'bulletSpeedMult');
     setupSlider('dev-eng-vol', 'engineVol');
-    setupSlider('dev-sfx-vol', 'sfxVol');
+    
+    // Audio Mixer Listeners
+    setupSlider('dev-vol-pfire', 'volPlayerFire');
+    setupSlider('dev-vol-efire', 'volEnemyFire');
+    setupSlider('dev-vol-exp', 'volExplosions');
+    setupSlider('dev-vol-ui', 'volUI');
+    
+    // Ambience Listener (Real-time update)
+    const ambSlider = document.getElementById('dev-vol-amb');
+    if (ambSlider) {
+        ambSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            debugConfig.volAmbience = val;
+            document.getElementById('val-vol-amb').textContent = val.toFixed(1);
+            // Update active ambience immediately if playing
+            if (activeAmbienceNode && activeAmbienceNode._gainNode) {
+                activeAmbienceNode._gainNode.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+            }
+        });
+    }
+    
+    // Master Volume Listener
+    const masterVolSlider = document.getElementById('dev-master-vol');
+    if (masterVolSlider) {
+        masterVolSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            debugConfig.masterVol = val;
+            document.getElementById('val-master-vol').textContent = val.toFixed(1);
+            if (masterGainNode) masterGainNode.gain.value = val;
+        });
+    }
 
     // MG Tuning Logic
     const mgDmgSlider = document.getElementById('dev-mg-dmg');
